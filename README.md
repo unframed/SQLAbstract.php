@@ -99,7 +99,7 @@ $sqlAbstract->replace('task', $task);
 
 $sqlAbstract = new SQLAbstractPDO($pdo, 'prefix_');
 // get an identified task's description and modified time
-$sqlAbstract->update('task', 1, array(
+$sqlAbstract->update('task', 'task_id', 1, array(
     'task_description' => '...',
     'task_modified_at' => time()
     ));

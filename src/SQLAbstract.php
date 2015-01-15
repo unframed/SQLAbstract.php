@@ -314,14 +314,13 @@ abstract class SQLAbstract {
         return $this->execute($sql, $params);
     }
 
-    function updateStatement($table, $key, $map) {
-        $keys = array_keys($map);
-        $expressions =
+    function updateStatement($table, $column, $key, $map) {
+        $expressions = array();
         $params = array();
-        foreach($keys as $key => $value) {
+        foreach($map as $name => $value) {
             array_push(
                 $expressions,
-                $this->identifier($key)." = ".$this->placeholder($value)
+                $this->identifier($name)." = ".$this->placeholder($value)
                 );
             array_push($params, $value);
         }
@@ -331,12 +330,13 @@ abstract class SQLAbstract {
             .$this->identifier($this->prefix($table))
             ." SET "
             .implode(", ", $expressions)
-            ." WHERE ".$this->identifier($table)." = ".$this->placeholder($key)
+            ." WHERE ".$this->identifier($column)." = ".$this->placeholder($key),
+            $params
             );
     }
 
-    function update ($table, $key, $map) {
-        list($sql, $params) = $this->updateStatement($table, $key, $map);
+    function update ($table, $column, $key, $map) {
+        list($sql, $params) = $this->updateStatement($table, $column, $key, $map);
         return $this->execute($sql, $params);
     }
 
