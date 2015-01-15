@@ -124,7 +124,7 @@ abstract class SQLAbstract {
         }
         return array((
             "SELECT ".$this->columns($columns)
-            ." FROM ".$this->prefix($view)
+            ." FROM ".$this->identifier($this->prefix($view))
             ." WHERE ".$this->identifier($column)
             ." IN (".$placeholders.")"
             ), $keys);
