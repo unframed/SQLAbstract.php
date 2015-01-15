@@ -88,7 +88,7 @@ abstract class SQLAbstract {
     function selectByColumn ($view, $column, $key, $columns) {
         return array(
             "SELECT ".$this->columns($columns)
-            ." FROM ".$this->prefix($view)
+            ." FROM ".$this->identifier($this->prefix($view))
             ." WHERE ".$this->identifier($column)
             ." = ".$this->placeholder($key),
             array($key)

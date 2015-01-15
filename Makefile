@@ -3,6 +3,8 @@ DEPS = deps \
 	deps/JSONMessage.php
 
 test: pull
+	php test/test_columns.php
+	php test/test_selectByColumn.php
 
 pull: ${DEPS}
 	cd deps/JSONMessage.php && git pull origin
