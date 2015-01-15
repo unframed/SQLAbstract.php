@@ -135,7 +135,7 @@ abstract class SQLAbstract {
         return $this->fetchAll($sql, $params);
     }
 
-    function selectByKeys ($view, $keys, $columns) {
+    function selectByKeys ($view, $keys, $columns=NULL) {
         $expressions = array();
         $params = array();
         foreach ($keys as $key => $value) {
@@ -147,7 +147,7 @@ abstract class SQLAbstract {
         }
         return array((
             "SELECT ".$this->columns($columns)
-            ." FROM ".$this->identifier($this->prefix($table))
+            ." FROM ".$this->identifier($this->prefix($view))
             ." WHERE ".implode(" AND ", $expressions)
             ), $params);
 
