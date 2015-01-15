@@ -1,5 +1,7 @@
 SQLAbstract.php
 ---
+[![Build Status](https://travis-ci.org/unframed/SQLAbstract.php.svg)](https://travis-ci.org/unframed/SQLAbstract.php)
+
 Practical SQL abstractions with concrete conveniences for query building and execution.
 
 Synopsis
