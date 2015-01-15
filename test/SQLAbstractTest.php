@@ -1,7 +1,7 @@
 <?php
 
 require_once('deps/test-more-php/Test-More-OO.php');
-
+require_once('deps/JSONMessage.php/src/JSONMessage.php');
 require_once('src/SQLAbstract.php');
 
 class SQLAbstractTest extends SQLAbstract {

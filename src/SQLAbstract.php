@@ -203,7 +203,7 @@ abstract class SQLAbstract {
         $whereFilter = array();
         $params = array();
         foreach ($filter as $column => $value) {
-            if (!unframed_is_list($value)) {
+            if (!JSONMessage::is_list($value)) {
                 array_push(
                     $whereFilter,
                     $this->identifier($column)." = ".$this->placeholder($value)
@@ -224,7 +224,7 @@ abstract class SQLAbstract {
             foreach ($like as $column => $value) {
                 array_push(
                     $whereLike,
-                    $this->identifier($column)." like ".$this->placeholder($value)
+                    $this->identifier($column)." LIKE ".$this->placeholder($value)
                     );
                 array_push($params, $value);
             }
