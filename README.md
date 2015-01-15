@@ -4,6 +4,12 @@ SQLAbstract.php
 
 Practical SQL abstractions with concrete conveniences for query building and execution.
 
+Requirements
+---
+- provide practical conveniences to query tables and views
+- with prefixed table names, guarded identifiers and custom placeholders
+- support PHP 5.3, PDO and WPDB.
+
 Synopsis
 ---
 ...
