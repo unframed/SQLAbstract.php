@@ -295,7 +295,7 @@ abstract class SQLAbstract {
         return array(
             $verb." INTO "
             .$this->identifier($this->prefix($table))
-            ." (".implode(", ", array_map(array($this, 'identifier'), $keys)).") "
+            ." (".implode(", ", array_map(array($this, 'identifier'), $keys)).")"
             ." VALUES (".implode(", ",
                 array_map(array($this, 'placeholder'), $params)
                 ).")",
