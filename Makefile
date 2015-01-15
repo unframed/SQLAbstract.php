@@ -11,6 +11,7 @@ test: pull
 	php test/test_orderBy.php
 	php test/test_filterLike.php
 	php test/test_whereParams.php
+	php test/test_countStatement.php
 
 pull: ${DEPS}
 	cd deps/JSONMessage.php && git pull origin
