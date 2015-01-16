@@ -98,7 +98,7 @@ abstract class SQLAbstract {
     function selectByColumn ($view, $column, $key, $columns) {
         return array(
             "SELECT ".$this->columns($columns)
-            ." FROM ".$this->identifier($this->prefix($view))
+            ." FROM ".$this->prefixedIdentifier($view)
             ." WHERE ".$this->identifier($column)
             ." = ".$this->placeholder($key),
             array($key)
@@ -134,7 +134,7 @@ abstract class SQLAbstract {
         }
         return array((
             "SELECT ".$this->columns($columns)
-            ." FROM ".$this->identifier($this->prefix($view))
+            ." FROM ".$this->prefixedIdentifier($view)
             ." WHERE ".$this->identifier($column)
             ." IN (".$placeholders.")"
             ), $keys);
@@ -157,7 +157,7 @@ abstract class SQLAbstract {
         }
         return array((
             "SELECT ".$this->columns($columns)
-            ." FROM ".$this->identifier($this->prefix($view))
+            ." FROM ".$this->prefixedIdentifier($view)
             ." WHERE ".implode(" AND ", $expressions)
             ), $params);
 
@@ -264,7 +264,7 @@ abstract class SQLAbstract {
     function countStatement ($view, $options) {
         list($where, $params) = $this->whereParams(new JSONMessage($options));
         $sql = (
-            "SELECT COUNT(*) FROM ".$this->identifier($this->prefix($view))
+            "SELECT COUNT(*) FROM ".$this->prefixedIdentifier($view)
             .($where === '' ? "" : " WHERE ".$where)
             );
         return array($sql, $params);
@@ -282,7 +282,7 @@ abstract class SQLAbstract {
         $orders = $m->getList('orders', array());
         $sql = (
             "SELECT ".$this->columns($columns)
-            ." FROM ".$this->identifier($this->prefix($view))
+            ." FROM ".$this->prefixedIdentifier($view)
             .($where === '' ? "" : " WHERE ".$where)
             .$this->orderBy($orders)
             );
@@ -304,7 +304,7 @@ abstract class SQLAbstract {
         $params = array_values($map);
         return array(
             $verb." INTO "
-            .$this->identifier($this->prefix($table))
+            .$this->prefixedIdentifier($table)
             ." (".implode(", ", array_map(array($this, 'identifier'), $keys)).")"
             ." VALUES (".implode(", ",
                 array_map(array($this, 'placeholder'), $params)
@@ -337,7 +337,7 @@ abstract class SQLAbstract {
         array_push($params, $key);
         return array(
             "UPDATE "
-            .$this->identifier($this->prefix($table))
+            .$this->prefixedIdentifier($table)
             ." SET "
             .implode(", ", $expressions)
             ." WHERE ".$this->identifier($column)." = ".$this->placeholder($key),
