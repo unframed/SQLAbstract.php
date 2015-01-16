@@ -53,9 +53,6 @@ class SQLAbstractWPDB extends SQLAbstract {
     function identifier ($name) {
         return "`".$name."`";
     }
-    function prefixedIdentifier ($name) {
-        return $this->identifier($this->prefix($name));
-    }
     function placeholder ($value) {
         if (!is_scalar($value)) {
             throw new Exception("SQL query parameter not a scalar: ".json_encode($value));

@@ -65,6 +65,16 @@ abstract class SQLAbstract {
     // The concrete conveniences: query builders and executers.
 
     /**
+     * Validate the prefixed $name return the quoted identifier.
+     *
+     * @param string $name
+     * @return string
+     */
+    function prefixedIdentifier ($name) {
+        return $this->identifier($this->prefix($name));
+    }
+
+    /**
      * Return an SQL list of validated column $names or '*' if the given $names
      * argument is empty of a NULL.
      *
