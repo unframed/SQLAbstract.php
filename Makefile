@@ -1,23 +1,26 @@
 DEPS = deps \
 	deps/test-more-php \
-	deps/JSONMessage.php
+	deps/test_sites.php \
+	deps/JSONMessage.php \
+	deps/WordPress
 
 test: pull
-	php test/test_columns.php
-	php test/test_selectByColumn.php
-	php test/test_selectInColumn.php
-	php test/test_selectByKeys.php
-	php test/test_order.php
-	php test/test_orderBy.php
-	php test/test_filterLike.php
-	php test/test_whereParams.php
-	php test/test_countStatement.php
-	php test/test_selectStatement.php
-	php test/test_insertStatement.php
-	php test/test_updateStatement.php
+	php test/columns.php
+	php test/selectByColumn.php
+	php test/selectInColumn.php
+	php test/selectByKeys.php
+	php test/order.php
+	php test/orderBy.php
+	php test/filterLike.php
+	php test/whereParams.php
+	php test/countStatement.php
+	php test/selectStatement.php
+	php test/insertStatement.php
+	php test/updateStatement.php
 
 pull: ${DEPS}
 	cd deps/JSONMessage.php && git pull origin
+	cd deps/test_sites.php && git pull origin
 
 deps:
 	mkdir -p deps
@@ -29,3 +32,13 @@ deps/JSONMessage.php:
 	git clone \
 		https://github.com/laurentszyster/JSONMessage.php.git \
 		deps/JSONMessage.php
+
+deps/test_sites.php:
+	git clone \
+		https://github.com/unframed/test_sites.php \
+		deps/test_sites.php
+
+deps/WordPress:
+	git clone \
+		https://github.com/WordPress/WordPress.git \
+		deps/WordPress

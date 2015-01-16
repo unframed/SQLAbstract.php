@@ -1,7 +1,28 @@
 <?php
 
 class SQLAbstractPDO extends SQLAbstract {
-    protected $_pdo;
+    /**
+     *
+     */
+    static function open ($dsn, $username=NULL, $password=NULL, $options=NULL) {
+        $pdo = new PDO($dsn, $username, $password, (
+            $options === NULL ? array() : $options
+            ));
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        return $pdo;
+    }
+    /**
+     *
+     */
+    function openMySQL ($name, $user, $password, $host='localhost', $port='3306') {
+        $dsn = 'mysql:host='.$host.';port='.$port.';dbname='.$name;
+        $pdo = SQLAbstractPDO::open(
+            $dsn, $user, $password,
+            array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8")
+            );
+        return $pdo;
+    }
+    private $_pdo;
     function __construct ($pdo, $prefix='') {
         $this->_pdo = $pdo;
         $this->_prefix = $prefix;
@@ -13,7 +34,7 @@ class SQLAbstractPDO extends SQLAbstract {
     function transaction ($callable, $arguments=NULL) {
         $transaction = FALSE;
         if ($arguments === NULL) {
-            $arguments = array($this->_pdo);
+            $arguments = array($this);
         }
         try {
             $transaction = $this->_pdo->beginTransaction();
@@ -49,12 +70,8 @@ class SQLAbstractPDO extends SQLAbstract {
                     self::_bindValue($st, $index, $value);
                     $index = $index + 1;
                 }
-            } elseif (JSONMessage::is_map($parameters)) {
-                foreach ($parameters as $key => $value) {
-                    self::_bindValue($st, $key, $value);
-                }
             } else {
-                throw new Exception('Type Error - $parameters not an array');
+                throw new Exception('Type Error - $parameters not a List');
             }
         }
         if ($st->execute()) {
