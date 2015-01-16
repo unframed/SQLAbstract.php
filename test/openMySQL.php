@@ -8,7 +8,7 @@ $t = new TestMore();
 $t->plan(1);
 
 $pdo = SQLAbstractPDO::openMySQL(
-	'test', 'test', 'dummy'
+	'wp', 'test', 'dummy'
 	);
 
 $t->is(TRUE, TRUE, 'openMySQL did not fail');

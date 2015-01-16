@@ -10,5 +10,5 @@ function test ($sql) {
 }
 
 test(new SQLAbstractPDO(SQLAbstractPDO::openMySQL(
-	'test', 'test', 'dummy'
+	'wp', 'test', 'dummy'
 	)));

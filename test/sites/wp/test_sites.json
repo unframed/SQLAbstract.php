@@ -1,0 +1,14 @@
+{
+	"httpHost": "127.0.0.1:8089",
+	"httpServer": "apache2",
+	"gitSource": "deps/wordpress",
+	"gitBranch": "3.9",
+	"links": {
+		"src/wysija-newsletters": "wp-content/plugins/wysija-newsletters"
+		},
+	"testUnits": [
+		"mp3_activate_and_test.js",
+		"mp3_install_pass.js",
+		"mp3_deactivate.js"
+		]
+}

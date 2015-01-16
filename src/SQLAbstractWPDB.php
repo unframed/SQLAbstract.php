@@ -4,7 +4,6 @@ class SQLAbstractWPDB extends SQLAbstract {
     function __construct ($prefix='') {
         $this->_prefix = $prefix;
     }
-    // ? TODO: leave to the Unframed application ?
     function transaction ($callable, $arguments=NULL) {
         global $wpdb;
         $transaction = FALSE;
@@ -12,14 +11,12 @@ class SQLAbstractWPDB extends SQLAbstract {
             $arguments = array($this);
         }
         try {
-            $transaction = $wpdb->query('START TRANSACTION');
+            $wpdb->query('START TRANSACTION');
             $result = call_user_func_array($callable, $arguments);
             $wpdb->query('COMMIT');
             return $result;
         } catch (Exception $e) {
-            if ($transaction) {
-                $wpdb->query('ROLLBACK');
-            }
+            $wpdb->query('ROLLBACK');
         }
     }
     function execute ($sql, $parameters=NULL) {
