@@ -163,16 +163,6 @@ abstract class SQLAbstract {
 
     }
 
-    function getRowByKeys ($view, $keys, $columns=NULL) {
-        list($sql, $params) = $this->selectByKeys($view, $keys, $columns);
-        return $this->fetchOne($sql, $params);
-    }
-
-    function getRowsByKeys ($view, $keys, $columns=NULL) {
-        list($sql, $params) = $this->selectByKeys($view, $keys, $columns);
-        return $this->fetchAll($sql, $params);
-    }
-
     /**
      * Validate a single element of an ORDER BY clause.
      *
