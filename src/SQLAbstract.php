@@ -107,9 +107,9 @@ abstract class SQLAbstract {
     /**
      * Return a row selected in
      */
-    function getRowById ($table, $id, $column=NULL, $columns=NULL) {
+    function getRowById ($table, $column, $id, $columns=NULL) {
         list($sql, $params) = $this->selectByColumn(
-            $table, ($column===NULL ? $table : $column), $ids, $columns
+            $table, $column, $id, $columns
             );
         return $this->fetchOne($sql, $params);
     }
@@ -140,8 +140,8 @@ abstract class SQLAbstract {
             ), $keys);
     }
 
-    function getRowsByIds ($table, $ids, $columns=NULL) {
-        list($sql, $params) = $this->selectInColumn($table, $table, $ids, $columns);
+    function getRowsByIds ($table, $column, $ids, $columns=NULL) {
+        list($sql, $params) = $this->selectInColumn($table, $column, $ids, $columns);
         return $this->fetchAll($sql, $params);
     }
 
@@ -314,29 +314,28 @@ abstract class SQLAbstract {
         return $this->execute($sql, $params);
     }
 
-    function updateStatement($table, $column, $key, $map) {
-        $expressions = array();
-        $params = array();
+    function updateStatement($table, $map, $options) {
+        $setExpressions = array();
+        $setParams = array();
         foreach($map as $name => $value) {
             array_push(
-                $expressions,
+                $setExpressions,
                 $this->identifier($name)." = ".$this->placeholder($value)
                 );
-            array_push($params, $value);
+            array_push($setParams, $value);
         }
-        array_push($params, $key);
-        return array(
+        list($whereExpression, $whereParams) = $this->whereParams(new JSONMessage($options));
+        return array((
             "UPDATE "
             .$this->prefixedIdentifier($table)
             ." SET "
-            .implode(", ", $expressions)
-            ." WHERE ".$this->identifier($column)." = ".$this->placeholder($key),
-            $params
-            );
+            .implode(", ", $setExpressions)
+            ." WHERE ".$whereExpression
+            ), array_merge($setParams, $whereParams));
     }
 
-    function update ($table, $column, $key, $map) {
-        list($sql, $params) = $this->updateStatement($table, $column, $key, $map);
+    function update ($table, $map, $options) {
+        list($sql, $params) = $this->updateStatement($table, $map, $options);
         return $this->execute($sql, $params);
     }
 
