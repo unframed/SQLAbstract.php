@@ -357,7 +357,7 @@ abstract class SQLAbstract {
         return $this->execute($sql, $params);
     }
 
-    function deleteStatement($table, $map, $options) {
+    function deleteStatement($table, $options) {
         list($whereExpression, $whereParams) = $this->whereParams(new JSONMessage($options));
         return array((
             "DELETE FROM "

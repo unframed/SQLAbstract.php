@@ -17,6 +17,7 @@ test: pull
 	php test/selectStatement.php
 	php test/insertStatement.php
 	php test/updateStatement.php
+	php test/deleteStatement.php
 	./press up wp
 	php test/openMySQL.php
 	./press down wp
