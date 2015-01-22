@@ -12,14 +12,11 @@ Requirements
 
 Synopsis
 ---
-SQLAbstract is meant to safely query a single existing SQL database, eventually with prefixed table names. It provides methods to: execute arbitrary statements, select and count rows in views and tables; as well methods to insert, replace, update and delete rows in tables.
-
-### Create
+SQLAbstract is meant to safely query a single existing SQL database, eventually with prefixed table names.
 
 So, let's assume a legacy 'task' table.
 
 ~~~sql
-
 CREATE TABLE IF NOT EXISTS `prefix_task` (
     `task_id` INTEGER AUTOINCREMENT PRIMARY KEY,
     `task_name` VARCHAR(255) NOT NULL,
@@ -30,13 +27,13 @@ CREATE TABLE IF NOT EXISTS `prefix_task` (
     `task_deleted_at` INTEGER UNSIGNED,
     `task_description` MEDIUMTEXT
     );
-
-?>
 ~~~
+
+Because you will find no `create` methods in SQLAbstract.
 
 ### Execute
 
-Though nothing prevents you to execute arbitrary SQL statements.
+Although nothing prevents you to execute arbitrary SQL statements.
 
 For instance, to create a view:
 
@@ -45,17 +42,19 @@ For instance, to create a view:
 
 $sql = new SQLAbstractPDO($pdo, 'prefix_');
 $sq->execute("
-    REPLACE VIEW ".$sql->prefixedIdentifier('task_view')." AS 
-        SELECT 
-            *,
-            (task_scheduled_for > NOW()) 
-            as task_due,
-            (task_completed_at IS NULL OR task_completed_at < NOW()) 
-            as task_completed
-            (task_deleted_at NOT NULL) 
-            as task_deleted
-        FROM ".$sql->prefixedIdentifier('task').";
-    ");
+
+REPLACE VIEW ".$sql->prefixedIdentifier('task_view')." AS 
+    SELECT 
+        *,
+        (task_scheduled_for > NOW()) 
+        as task_due,
+        (task_completed_at IS NULL OR task_completed_at < NOW()) 
+        as task_completed
+        (task_deleted_at NOT NULL) 
+        as task_deleted
+    FROM ".$sql->prefixedIdentifier('task').";
+
+");
 
 ?>
 ~~~
@@ -73,9 +72,11 @@ $sq->fetchAll(
 ?>
 ~~~
 
-You may use `SQLAbstract::execute` to insert, replace, update, select, filter, search and count rows, but conveniences are provided. 
+You may use `execute` to insert, replace, update, select and count rows, but safe conveniences are provided.
 
 ### Insert
+
+For instance, let's insert a `$task` array in the table `task` and update this task's identifier :
 
 ~~~php
 <?php
@@ -92,37 +93,20 @@ $task['task_id'] = $sql->insert('task', $task);
 ?>
 ~~~
 
-...
+The use of `insert` is allways safe.
 
-### Replace
+### Select and Replace
 
-~~~php
-<?php
-
-$task = $sql->getRowById('task', 'task_id', 1);
-
-?>
-~~~
-
-...
+Let's now use safe options to select all tasks named 'new task', edit and then replace each task :
 
 ~~~php
 <?php
 
-$task['task_description'] = '...';
-$task['task_modified_at'] = time();
-$sql->replace('task', $task);
-
-?>
-~~~
-
-...
-
-~~~php
-<?php
-
-foreach($sql->getRowsByIds('task', 'task_id', array(1,2,3)) as $task) {
-    $task['task_description'] = '...';
+foreach($sql->select('task', array(
+    'filter' => array(
+        'task_name' => 'new task'
+        )
+    )) as $task) {
     $task['task_modified_at'] = time();
     $sql->replace('task', $task);
 }
@@ -130,59 +114,45 @@ foreach($sql->getRowsByIds('task', 'task_id', array(1,2,3)) as $task) {
 ?>
 ~~~
 
-...
+Not very elegant in this case, but demonstrative of a common pattern.
 
 ### Update
 
+As safe and more efficient way to update filtered rows is way simpler.
+
 ~~~php
 <?php
 
-$sql->update(
-    'task', 
-    array(
-        'task_description' => '...',
-        'task_modified_at' => time()
-    ), 
-    array(
-        'filter' => array('task'=>1)
+$sql->update('task', array(
+    'task_modified_at' => time()
+), array(
+    'filter' => array(
+        'task_name' => 'new name'
     )
-);
+));
 
 ?>
 ~~~
 
-...
+### Delete
 
-### Select
-
-...
+Deleting rows at once follows the same pattern, using the same options as `select`, `update` and `count`.
 
 ~~~php
 <?php
 
-$dueTasks = $sql->select('task_view', array(
-    'columns' => array('task_id', 'task_name', 'task_scheduled_at'),
-    'filter' => array('task_due' => TRUE)
-    ));
-echo "[".implode(",",array_map(json_encode, $dueTasks)."]";
+$sql->delete('task', array(
+    'filter' => array(
+        'task_name' => 'new name'
+    )
+));
 
 ?>
 ~~~
 
-...
+Note the absence of litteral SQL, this code is free of SQL injection.
 
-~~~json
-{
-    "columns": [],
-    "where": "",
-    "params": [],
-    "order": [],
-    "limit": 30,
-    "offset": 0
-}
-~~~
-
-...
+### Safe Options
 
 ~~~json
 {
@@ -195,7 +165,14 @@ echo "[".implode(",",array_map(json_encode, $dueTasks)."]";
 }
 ~~~
 
-...
+### Unsafe Options
+
+~~~json
+{
+    "where": "",
+    "params": []
+}
+~~~
 
 Applications
 ---
