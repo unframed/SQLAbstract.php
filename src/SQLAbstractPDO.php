@@ -81,8 +81,7 @@ class SQLAbstractPDO extends SQLAbstract {
         throw new Exception($info[2]);
     }
     function execute ($sql, $parameters=NULL) {
-        $this->_statement($sql, $parameters);
-        return TRUE;
+        return $this->_statement($sql, $parameters)->rowCount();
     }
     function lastInsertId () {
         return $this->_pdo->lastInsertId();
