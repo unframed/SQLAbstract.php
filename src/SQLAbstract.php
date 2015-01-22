@@ -251,6 +251,15 @@ abstract class SQLAbstract {
         }
     }
 
+    static function assertSafe ($options) {
+        if (
+            array_key_exists('where', $options) ||
+            array_key_exists('params', $options)
+            ) {
+            throw $this->exception('unsafe options defined');
+        }
+    }
+
     function countStatement ($view, $options) {
         list($where, $params) = $this->whereParams(new JSONMessage($options));
         $sql = (
@@ -260,7 +269,10 @@ abstract class SQLAbstract {
         return array($sql, $params);
     }
 
-    function count ($view, $options) {
+    function count ($view, $options, $safe=FALSE) {
+        if ($safe === TRUE) {
+            self::assertSafe($options);
+        }
         list($sql, $params) = $this->countStatement($view, $options);
         return intval($this->fetchOneColumn($sql, $params));
     }
@@ -284,7 +296,10 @@ abstract class SQLAbstract {
         return array($sql, $params);
     }
 
-    function select ($view, $options) {
+    function select ($view, $options, $safe=FALSE) {
+        if ($safe === TRUE) {
+            self::assertSafe($options);
+        }
         list($sql, $params) = $this->selectStatement($view, $options);
         return $this->fetchAll($sql, $params);
     }
@@ -334,8 +349,28 @@ abstract class SQLAbstract {
             ), array_merge($setParams, $whereParams));
     }
 
-    function update ($table, $map, $options) {
+    function update ($table, $map, $options, $safe=FALSE) {
+        if ($safe === TRUE) {
+            self::assertSafe($options);
+        }
         list($sql, $params) = $this->updateStatement($table, $map, $options);
+        return $this->execute($sql, $params);
+    }
+
+    function deleteStatement($table, $map, $options) {
+        list($whereExpression, $whereParams) = $this->whereParams(new JSONMessage($options));
+        return array((
+            "DELETE FROM "
+            .$this->prefixedIdentifier($table)
+            ." WHERE ".$whereExpression
+            ), $whereParams);
+    }
+
+    function delete ($table, $options, $safe=FALSE) {
+        if ($safe === TRUE) {
+            self::assertSafe($options);
+        }
+        list($sql, $params) = $this->deleteStatement($table, $options);
         return $this->execute($sql, $params);
     }
 
