@@ -12,10 +12,11 @@ Requirements
 
 Synopsis
 ---
+SQLAbstract is meant to safely query a single existing SQL database, eventually with prefixed table names. It provides methods to: execute arbitrary statements, select and count rows in views and tables; as well methods to insert, replace, update and delete rows in tables.
 
 ### Create
 
-Let's assume a legacy 'task' table and its view.
+So, let's assume a legacy 'task' table.
 
 ~~~sql
 
@@ -32,8 +33,6 @@ CREATE TABLE IF NOT EXISTS `prefix_task` (
 
 ?>
 ~~~
-
-SQLAbstract is meant for legacy databases with prefixed table names - like WordPress - and does not provide functions to create tables or views.
 
 ### Execute
 
@@ -138,10 +137,16 @@ foreach($sql->getRowsByIds('task', 'task_id', array(1,2,3)) as $task) {
 ~~~php
 <?php
 
-$sql->update('task', 'task_id', 1, array(
-    'task_description' => '...',
-    'task_modified_at' => time()
-    ));
+$sql->update(
+    'task', 
+    array(
+        'task_description' => '...',
+        'task_modified_at' => time()
+    ), 
+    array(
+        'filter' => array('task'=>1)
+    )
+);
 
 ?>
 ~~~
@@ -149,6 +154,8 @@ $sql->update('task', 'task_id', 1, array(
 ...
 
 ### Select
+
+...
 
 ~~~php
 <?php
@@ -162,3 +169,42 @@ echo "[".implode(",",array_map(json_encode, $dueTasks)."]";
 ?>
 ~~~
 
+...
+
+~~~json
+{
+    "columns": [],
+    "where": "",
+    "params": [],
+    "order": [],
+    "limit": 30,
+    "offset": 0
+}
+~~~
+
+...
+
+~~~json
+{
+    "columns": [],
+    "filter": {},
+    "like": {},
+    "order": [],
+    "limit": 30,
+    "offset": 0
+}
+~~~
+
+...
+
+Applications
+---
+SQLAbstract can be applied in application plugins that require consistent database access in and out of the scope of execution of the extended applications.
+
+Unlike many database abstraction layers, SQLAbstract limits the query building and execution conveniences to a practical minimum, leaving room for a maximum of concrete applications.
+
+SQLAbstract does not serve the "purely" theoretical case of an undefined SQL database for a fully object oriented implementation. Also, it won't solve the entreprise case of multiple databases with more object oriented doctrine.
+
+This library just provides as little abstraction is required to solve the  case of legacy application plugins and extensions for WordPress.
+
+You may find it usefull to extend your legacy database application.
