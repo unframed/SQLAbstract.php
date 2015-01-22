@@ -95,7 +95,16 @@ $task['task_id'] = $sql->insert('task', $task);
 ?>
 ~~~
 
-The use of `insert` is allways safe.
+The following SQL statement will be executed, with safely bound parameters.
+
+~~~sql
+INSERT INTO `prefix_task` (
+    `task_name`, 
+    `task_created_at`, 
+    `task_scheduled_for`, 
+    `task_modified_at`, 
+    ) VALUES (?, ?, ?, ?)
+~~~
 
 ### Select and Replace
 
@@ -114,6 +123,21 @@ foreach($sql->select('task', array(
 }
 
 ?>
+~~~
+
+The following SQL statements will be executed, with safely bound parameters.
+
+~~~sql
+SELECT * FROM `prefix_task` WHERE 
+    `task_name` = ? 
+;
+REPLACE INTO `prefix_task` (
+    `task_name`, 
+    `task_created_at`, 
+    `task_scheduled_for`, 
+    `task_modified_at`, 
+    ) VALUES (?, ?, ?, ?)
+;
 ~~~
 
 Not very elegant in this case, but demonstrative of a common pattern.
@@ -136,6 +160,12 @@ $sql->update('task', array(
 ?>
 ~~~
 
+Also, it executes a single SQL statement.
+
+~~~sql
+UPDATE `prefix_task` SET `task_modified_at` = ? WHERE `task_name` = ? 
+~~~
+
 ### Delete
 
 Deleting rows at once follows the same pattern, using the same options as `select`, `update` and `count`.
@@ -154,25 +184,91 @@ $sql->delete('task', array(
 
 Note the absence of litteral SQL, this code is free of SQL injection.
 
+~~~sql
+DELETE FROM `prefix_task` WHERE `task_name` = ? 
+~~~
+
+This is because we used safe options in all examples so far.
+
 ### Safe Options
+
+The safe options to generate a WHERE clause are `filter` and `like`.
+
+For instance, here is a bit more complex select statement. 
+
+~~~php
+<?php
+
+$sql->select("task", array(
+    "filter" => array(
+        "task_id" => array(1,2,3),
+        "task_deleted_at" => null
+    ),
+    "like" => array(
+        "task_name" => "new%"
+        "task_description" => "new%"
+    )
+));
+
+?>
+~~~
+
+This implements the typical filter and search feature found in most database application and executes the following SQL :
+
+~~~sql
+SELECT * FROM `prefix_task` WHERE 
+    `task_in` in (?, ?, ?) 
+    AND task_delete_at = ?
+    AND (
+        `task_name` like ? 
+        OR `task_description` like ?
+        ) 
+;
+~~~
+
+Given enough views these options can implement all selections.
+
+### Unsafe Options
+
+There are unsafe options though to use when filtering by keys and patterns does not apply and we don't have a view.
+
+The `where` and `params` options allow to specify an SQL expression and a list of execution parameters.
+
+Applications are expected to use the `identifier` and `placeholder` methods to build the expression.
+
+~~~php
+<?php
+
+$now = time();
+$sql->select("task", array(
+    "where" => (
+        $sql->identifier('task_delete_scheduled_for')
+        ." > "
+        .$sql->placeholder($now)
+    ),
+    "params" => array($now)
+));
+
+?>
+~~~
+
+Note that the SQL generated contains the literal `where` option.
+
+~~~sql
+SELECT * FROM `prefix_task` WHERE `task_scheduled_for` > ?
+~~~
+
+So, no user input should be passed as `where` option.
+
+### Select Options
 
 ~~~json
 {
     "columns": [],
-    "filter": {},
-    "like": {},
     "order": [],
     "limit": 30,
     "offset": 0
 }
 ~~~
 
-### Unsafe Options
-
-~~~json
-{
-    "where": "",
-    "params": []
-}
-~~~
-
+...
