@@ -2,7 +2,9 @@ SQLAbstract.php
 ---
 [![Build Status](https://travis-ci.org/unframed/SQLAbstract.php.svg)](https://travis-ci.org/unframed/SQLAbstract.php)
 
-Practical SQL abstractions with concrete conveniences for query building and execution.
+A practical SQL abstraction class with concrete conveniences for query building and execution.
+
+Usefull to plugin and extend legacy PHP database applications.
 
 Requirements
 ---
@@ -174,14 +176,3 @@ Note the absence of litteral SQL, this code is free of SQL injection.
 }
 ~~~
 
-Applications
----
-SQLAbstract can be applied in application plugins that require consistent database access in and out of the scope of execution of the extended applications.
-
-Unlike many database abstraction layers, SQLAbstract limits the query building and execution conveniences to a practical minimum, leaving room for a maximum of concrete applications.
-
-SQLAbstract does not serve the "purely" theoretical case of an undefined SQL database for a fully object oriented implementation. Also, it won't solve the entreprise case of multiple databases with more object oriented doctrine.
-
-This library just provides as little abstraction is required to solve the  case of legacy application plugins and extensions for WordPress.
-
-You may find it usefull to extend your legacy database application.
