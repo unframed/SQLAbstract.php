@@ -305,10 +305,10 @@ abstract class SQLAbstract {
     }
 
     function column ($view, $options, $safe=FALSE) {
-        if (
+        if (!(
             array_key_exists('columns', $options) &&
             count($options['columns'])===1
-            ) {
+            )) {
             throw $this->exception(
                 "Expected an array with a single column in the 'columns' option"
                 );
