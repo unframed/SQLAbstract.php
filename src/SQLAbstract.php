@@ -390,4 +390,7 @@ abstract class SQLAbstract {
         return $this->execute($sql, $params);
     }
 
+    function exception ($message, $previous=NULL) {
+        return new Exception($message, $previous);
+    }
 }
