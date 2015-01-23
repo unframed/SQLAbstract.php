@@ -304,6 +304,22 @@ abstract class SQLAbstract {
         return $this->fetchAll($sql, $params);
     }
 
+    function column ($view, $options, $safe=FALSE) {
+        if (
+            array_key_exists('columns', $options) &&
+            count($options['columns'])===1
+            ) {
+            throw $this->exception(
+                "Expected an array with a single column in the 'columns' option"
+                );
+        }
+        if ($safe === TRUE) {
+            self::assertSafe($options);
+        }
+        list($sql, $params) = $this->selectStatement($view, $options);
+        return $this->fetchAllColumn($sql, $params);
+    }
+
     function insertStatement ($table, $map, $verb='INSERT') {
         $keys = array_keys($map);
         $params = array_values($map);
