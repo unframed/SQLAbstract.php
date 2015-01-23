@@ -106,18 +106,68 @@ INSERT INTO `prefix_task` (
     ) VALUES (?, ?, ?, ?)
 ~~~
 
-### Select and Replace
+### Options
 
-Let's now use safe options to select all tasks named 'new task', edit and then replace each task :
+Before we move on to `select` the inserted row, let's pause and consider the set of options used by SQAbstract methods to build an SQL statement, eventually safely.
+
+Here are the defaults for the safe options :
 
 ~~~php
 <?php
 
-foreach($sql->select('task', array(
+$options = array(
+    "columns": array(),
+    "filter": array(),
+    "like": array(),
+    "order": array(),
+    "limit": 30,
+    "offset": 0
+)
+
+?>
+~~~
+
+We will see examples below.
+
+### Count and Column
+
+To count all tasks and fetch the whole `task_id` column, do :
+
+~~~php
+<?php
+
+$allTasksCount = $sql->count('task');
+$allTasksIds = $sql->column('task', array(
+    'columns' => array('task_id'),
+    'limit' => $allTasksCount
+));
+
+?>
+~~~
+
+Here are the two SQL `SELECT` statements executed.
+
+~~~sql
+SELECT COUNT(*) FROM `prefix_task`;
+SELECT `task_id` FROM `prefix_task` LIMIT 1;
+~~~
+
+Note that selecting a column or rows with SQLAbstract *always* implies a `LIMIT` clause (with an `OFFSET` to zero by default).
+
+### Select and Replace
+
+Select the first task named 'new task', edit and replace :
+
+~~~php
+<?php
+
+$tasks = $sql->select('task', array(
     'filter' => array(
         'task_name' => 'new task'
-        )
-    )) as $task) {
+        ),
+    'limit' => 1
+));
+foreach($tasks as $task) {
     $task['task_modified_at'] = time();
     $sql->replace('task', $task);
 }
@@ -128,9 +178,7 @@ foreach($sql->select('task', array(
 The following SQL statements will be executed, with safely bound parameters.
 
 ~~~sql
-SELECT * FROM `prefix_task` WHERE 
-    `task_name` = ? 
-;
+SELECT * FROM `prefix_task` WHERE `task_name` = ? LIMIT 1;
 REPLACE INTO `prefix_task` (
     `task_name`, 
     `task_created_at`, 
@@ -140,11 +188,11 @@ REPLACE INTO `prefix_task` (
 ;
 ~~~
 
-Not very elegant in this case, but demonstrative of a common pattern.
+Not very elegant in this case, but demonstrative of a common pattern when there is more than one row to fully read and replace.
 
 ### Update
 
-As safe and more efficient way to update filtered rows is way simpler.
+Updating rows selected by options with the same data is actually much simpler.
 
 ~~~php
 <?php
@@ -166,9 +214,11 @@ Also, it executes a single SQL statement.
 UPDATE `prefix_task` SET `task_modified_at` = ? WHERE `task_name` = ? 
 ~~~
 
+Beware, updates have no limits.
+
 ### Delete
 
-Deleting rows at once follows the same pattern, using the same options as `select`, `update` and `count`.
+Deleting rows at once follows the same pattern, using the same options as `update` and `count`.
 
 ~~~php
 <?php
@@ -182,13 +232,13 @@ $sql->delete('task', array(
 ?>
 ~~~
 
-Note the absence of litteral SQL, this code is free of SQL injection.
+Again beware `delete` yields no `LIMIT` clause.
 
 ~~~sql
 DELETE FROM `prefix_task` WHERE `task_name` = ? 
 ~~~
 
-This is because we used safe options in all examples so far.
+To use with care in any cases.
 
 ### Safe Options
 
@@ -226,15 +276,13 @@ SELECT * FROM `prefix_task` WHERE
 ;
 ~~~
 
-Given enough views these options can implement all selections.
+Given all SQL views on tables these options could implement all selections.
+
+But we don't have *all* views to select from.
 
 ### Unsafe Options
 
-There are unsafe options though to use when filtering by keys and patterns does not apply and we don't have a view.
-
-The `where` and `params` options allow to specify an SQL expression and a list of execution parameters.
-
-Applications are expected to use the `identifier` and `placeholder` methods to build the expression.
+The `where` and `params` options allow to specify an SQL expression and a list of execution parameters. Note that applications are expected to use the `identifier` and `placeholder` methods to build the expression.
 
 ~~~php
 <?php
@@ -252,23 +300,10 @@ $sql->select("task", array(
 ?>
 ~~~
 
-Note that the SQL generated contains the literal `where` option.
+Remember that the SQL generated contains the literal `where` option.
 
 ~~~sql
 SELECT * FROM `prefix_task` WHERE `task_scheduled_for` > ?
 ~~~
 
 So, no user input should be passed as `where` option.
-
-### Select Options
-
-~~~json
-{
-    "columns": [],
-    "order": [],
-    "limit": 30,
-    "offset": 0
-}
-~~~
-
-...
