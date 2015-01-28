@@ -16,7 +16,7 @@ class SQLAbstractPDO extends SQLAbstract {
      */
     function openMySQL ($name, $user, $password, $host='localhost', $port='3306') {
         $dsn = 'mysql:host='.$host.';port='.$port.';dbname='.$name;
-        $pdo = SQLAbstractPDO::open(
+        $pdo = self::open(
             $dsn, $user, $password,
             array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8")
             );
@@ -30,7 +30,6 @@ class SQLAbstractPDO extends SQLAbstract {
     function pdo () {
         return $this->_pdo;
     }
-    // ? TODO: leave to the Unframed application ?
     function transaction ($callable, $arguments=NULL) {
         $transaction = FALSE;
         if ($arguments === NULL) {
@@ -45,18 +44,18 @@ class SQLAbstractPDO extends SQLAbstract {
             if ($transaction) {
                 $this->_pdo->rollBack();
             }
-            throw $e;
+            throw $this->exception($e->messsage(), $e);
         }
     }
     private static function _bindValue ($st, $index, $value) {
-        if (!is_scalar($value)) {
-            throw new Unframed('cannot bind non scalar '.json_encode($value));
-        } elseif (is_int($value)) {
+        if (is_int($value)) {
             return $st->bindValue($index, $value, PDO::PARAM_INT);
         } elseif (is_bool($value)) {
             return $st->bindValue($index, $value, PDO::PARAM_BOOL);
         } elseif (is_null($value)) {
             return $st->bindValue($index, $value, PDO::PARAM_NULL);
+        } elseif (!is_scalar($value)) {
+            throw $this->exception('cannot bind non scalar '.json_encode($value));
         } else {
             return $st->bindValue($index, $value); // String
         }
