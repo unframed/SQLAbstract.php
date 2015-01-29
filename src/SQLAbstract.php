@@ -391,6 +391,6 @@ abstract class SQLAbstract {
     }
 
     function exception ($message, $previous=NULL) {
-        return new Exception($message, $previous);
+        return new Exception($message, 0, $previous);
     }
 }
