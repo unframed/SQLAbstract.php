@@ -44,10 +44,10 @@ class SQLAbstractPDO extends SQLAbstract {
             if ($transaction) {
                 $this->_pdo->rollBack();
             }
-            throw $this->exception($e->messsage(), $e);
+            throw $this->exception($e->getMessage(), $e);
         }
     }
-    private static function _bindValue ($st, $index, $value) {
+    private function _bindValue ($st, $index, $value) {
         if (is_int($value)) {
             return $st->bindValue($index, $value, PDO::PARAM_INT);
         } elseif (is_bool($value)) {
@@ -66,18 +66,18 @@ class SQLAbstractPDO extends SQLAbstract {
             if (JSONMessage::is_list($parameters)) {
                 $index = 1;
                 foreach ($parameters as $value) {
-                    self::_bindValue($st, $index, $value);
+                    $this->_bindValue($st, $index, $value);
                     $index = $index + 1;
                 }
             } else {
-                throw new Exception('Type Error - $parameters not a List');
+                throw $this->exception('Type Error - $parameters not a List');
             }
         }
         if ($st->execute()) {
             return $st;
         }
         $info = $st->errorInfo();
-        throw new Exception($info[2]);
+        throw $this->exception($info[2]);
     }
     function execute ($sql, $parameters=NULL) {
         return $this->_statement($sql, $parameters)->rowCount();
