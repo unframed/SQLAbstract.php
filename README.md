@@ -4,8 +4,6 @@ SQLAbstract.php
 
 A practical SQL abstraction class with concrete conveniences for query building and execution.
 
-Usefull to plugin and extend legacy PHP database applications.
-
 Requirements
 ---
 - provide practical conveniences to query tables and views
@@ -74,7 +72,7 @@ $sq->fetchAll(
 ?>
 ~~~
 
-You may use `execute` to insert, replace, update, select and count rows, but safe conveniences are provided.
+You may use `execute` to insert, replace and update or use one of the four `fetch*` methods to select and count rows, but conveniences are provided.
 
 ### Insert
 
@@ -90,7 +88,7 @@ $task = array(
     'task_scheduled_for' => $now + 3600,
     'task_modified_at' => $now
     );
-$task['task_id'] = $sql->insert('task', $task);
+$task['task_id'] = intval($sql->insert('task', $task));
 
 ?>
 ~~~
@@ -282,7 +280,9 @@ But we don't have *all* views to select from.
 
 ### Unsafe Options
 
-The `where` and `params` options allow to specify an SQL expression and a list of execution parameters. Note that applications are expected to use the `identifier` and `placeholder` methods to build the expression.
+The `where` and `params` options allow to specify an SQL expression and a list of execution parameters.
+
+Note that applications are expected to use the `identifier` and `placeholder` methods to build the expression.
 
 ~~~php
 <?php
@@ -290,7 +290,7 @@ The `where` and `params` options allow to specify an SQL expression and a list o
 $now = time();
 $sql->select("task", array(
     "where" => (
-        $sql->identifier('task_delete_scheduled_for')
+        $sql->identifier('task_scheduled_for')
         ." > "
         .$sql->placeholder($now)
     ),

@@ -14,7 +14,7 @@ class SQLAbstractPDO extends SQLAbstract {
     /**
      *
      */
-    function openMySQL ($name, $user, $password, $host='localhost', $port='3306') {
+    static function openMySQL ($name, $user, $password, $host='localhost', $port='3306') {
         $dsn = 'mysql:host='.$host.';port='.$port.';dbname='.$name;
         $pdo = self::open(
             $dsn, $user, $password,
