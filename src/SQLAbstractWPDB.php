@@ -19,9 +19,17 @@ class SQLAbstractWPDB extends SQLAbstract {
             $wpdb->query('ROLLBACK');
         }
     }
+    static private function _prepare ($sql, $parameters) {
+        if ($parameters !== NULL && count($parameters) > 0) {
+            global $wpdb;
+            $arguments = array_merge(array($sql), $parameters);
+            return call_user_func_array(array($wpdb, 'prepare'), $arguments);
+        }
+        return $sql;
+    }
     function execute ($sql, $parameters=NULL) {
         global $wpdb;
-        return $wpdb->query($wpdb->prepare($sql, $parameters));
+        return $wpdb->query(self::_prepare($sql, $parameters));
     }
     function lastInsertId () {
         global $wpdb;
@@ -29,19 +37,19 @@ class SQLAbstractWPDB extends SQLAbstract {
     }
     function fetchOne ($sql, $parameters=NULL) {
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare($sql, $parameters), ARRAY_A);
+        return $wpdb->get_row(self::_prepare($sql, $parameters), ARRAY_A);
     }
     function fetchAll ($sql, $parameters=NULL) {
         global $wpdb;
-        return $wpdb->get_results($wpdb->prepare($sql, $parameters), ARRAY_A);
+        return $wpdb->get_results(self::_prepare($sql, $parameters), ARRAY_A);
     }
     function fetchOneColumn ($sql, $parameters=NULL) {
         global $wpdb;
-        return $wpdb->get_var($wpdb->prepare($sql, $parameters));
+        return $wpdb->get_var(self::_prepare($sql, $parameters));
     }
     function fetchAllColumn ($sql, $parameters=NULL) {
         global $wpdb;
-        return $wpdb->get_col($wpdb->prepare($sql, $parameters));
+        return $wpdb->get_col(self::_prepare($sql, $parameters));
     }
     function prefix ($name='') {
         global $wpdb;
