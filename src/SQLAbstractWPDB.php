@@ -29,11 +29,11 @@ class SQLAbstractWPDB extends SQLAbstract {
     }
     function fetchOne ($sql, $parameters=NULL) {
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare($sql, $parameters));
+        return $wpdb->get_row($wpdb->prepare($sql, $parameters), ARRAY_A);
     }
     function fetchAll ($sql, $parameters=NULL) {
         global $wpdb;
-        return $wpdb->get_results($wpdb->prepare($sql, $parameters));
+        return $wpdb->get_results($wpdb->prepare($sql, $parameters), ARRAY_A);
     }
     function fetchOneColumn ($sql, $parameters=NULL) {
         global $wpdb;
@@ -52,7 +52,7 @@ class SQLAbstractWPDB extends SQLAbstract {
     }
     function placeholder ($value) {
         if (!is_scalar($value)) {
-            throw new Exception("SQL query parameter not a scalar: ".json_encode($value));
+            throw $this->exception("SQL query parameter not a scalar: ".json_encode($value));
         } elseif (is_integer($value) || is_bool($value)) {
             return '%d';
         } elseif (is_float($value)) {
