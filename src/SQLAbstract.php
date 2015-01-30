@@ -269,7 +269,7 @@ abstract class SQLAbstract {
         return array($sql, $params);
     }
 
-    function count ($view, $options, $safe=FALSE) {
+    function count ($view, $options=array(), $safe=FALSE) {
         if ($safe === TRUE) {
             self::assertSafe($options);
         }
