@@ -4,11 +4,9 @@ class SQLAbstractPDO extends SQLAbstract {
     /**
      *
      */
-    static function open ($dsn, $username=NULL, $password=NULL, $options=NULL) {
-        $pdo = new PDO($dsn, $username, $password, (
-            $options === NULL ? array() : $options
-            ));
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    static function open ($dsn, $username=NULL, $password=NULL, $options=array()) {
+        $options[PDO::ATTR_ERRMODE] = PDO::ERRMODE_WARNING;
+        $pdo = new PDO($dsn, $username, $password, $options);
         return $pdo;
     }
     /**
@@ -61,23 +59,32 @@ class SQLAbstractPDO extends SQLAbstract {
         }
     }
     private function _statement ($sql, $parameters) {
-        $st = $this->_pdo->prepare($sql);
-        if ($parameters !== NULL) {
-            if (JSONMessage::is_list($parameters)) {
-                $index = 1;
-                foreach ($parameters as $value) {
-                    $this->_bindValue($st, $index, $value);
-                    $index = $index + 1;
+        try {
+            $st = $this->_pdo->prepare($sql);
+            if ($parameters !== NULL) {
+                if (JSONMessage::is_list($parameters)) {
+                    $index = 1;
+                    foreach ($parameters as $value) {
+                        $this->_bindValue($st, $index, $value);
+                        $index = $index + 1;
+                    }
+                } else {
+                    throw $this->exception('Type Error - $parameters not a List');
                 }
-            } else {
-                throw $this->exception('Type Error - $parameters not a List');
             }
+            if ($st->execute() !== FALSE) {
+                return $st;
+            }
+            $info = $st->errorInfo();
+            $exception = $this->exception(
+                $info[2]."\n".$sql."\n".json_encode($parameters)
+                );
+        } catch (PDOException $e) {
+            $exception = $this->exception(
+                $e->getMessage()."\n".$sql."\n".json_encode($parameters), $e
+                );
         }
-        if ($st->execute()) {
-            return $st;
-        }
-        $info = $st->errorInfo();
-        throw $this->exception($info[2]);
+        throw $exception;
     }
     function execute ($sql, $parameters=NULL) {
         return $this->_statement($sql, $parameters)->rowCount();
