@@ -62,6 +62,12 @@ abstract class SQLAbstract {
      */
     abstract function placeholder($value);
 
+    // ...
+
+    function exception ($message, $previous=NULL) {
+        return new Exception($message, 0, $previous);
+    }
+
     // The concrete conveniences: query builders and executers.
 
     /**
@@ -85,6 +91,49 @@ abstract class SQLAbstract {
         return (($names === NULL) || (count($names) === 0) ? "*" : implode(
             ",", array_map(array($this, 'identifier'), $names)
             ));
+    }
+    /**
+     *
+     */
+    function createViewStatement ($name, $select) {
+        return (
+            "CREATE OR REPLACE VIEW "
+            .$this->prefixedIdentifier($name)
+            ." AS ".$select
+            );
+    }
+    /**
+     *
+     */
+    function createTableStatement ($name, $columns, $primary) {
+        $lines = array();
+        foreach ($columns as $column => $declaration) {
+            array_push($lines, $this->identifier($column)." ".$declaration);
+        }
+        if (count($primary) === 1) {
+            array_push($lines, "PRIMARY KEY (".$this->identifier($primary[0]).")");
+        } elseif (count($primary) > 1) {
+            array_push($lines, "PRIMARY KEY (".implode(
+                ", ", array_map(array($this, 'identifier'), $primary)
+                ).")");
+        }
+        return (
+            "CREATE TABLE IF NOT EXISTS "
+            .$this->prefixedIdentifier($name)
+            ." (\n\t".implode(",\t\n", $lines)."\n\t)\n"
+            );
+    }
+    function alterTableStatement ($name, $columns) {
+        $lines = array();
+        foreach ($columns as $column => $declaration) {
+            array_push($lines, $this->identifier($column)." ".$declaration);
+        }
+        return (
+            "ALTER TABLE "
+            .$this->prefixedIdentifier($name)
+            ." ADD COLUMN "
+            .implode(", ADD COLUMN ", $lines)
+            );
     }
     /**
      * Return an SQL statement with a list of parameters to select
@@ -390,7 +439,31 @@ abstract class SQLAbstract {
         return $this->execute($sql, $params);
     }
 
-    function exception ($message, $previous=NULL) {
-        return new Exception($message, 0, $previous);
+    // MySQL only ,-)
+
+    function showTablesStatement ($like='') {
+        return (
+            "SHOW TABLES LIKE '".$this->prefixed($like)."%'"
+            );
     }
+
+    final function showTables ($like='') {
+        return $this->fetchAllColumn($this->showTablesStatement($like));
+    }
+
+    function showColumnsStatement ($name) {
+        return (
+            "SHOW COLUMNS FROM ".$this->prefixedIdentifier($name)
+            );
+    }
+
+    final function showColumns ($name, $key='Field') {
+        $colums = array();
+        $rows = $this->fetchAll($this->showColumnsStatement($name));
+        foreach ($rows as $row) {
+            $columns[$row[$key]] = $row;
+        }
+        return $columns;
+    }
+
 }
