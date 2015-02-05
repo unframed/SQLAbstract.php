@@ -12,6 +12,10 @@ Requirements
 - with prefixed table names, guarded identifiers and custom placeholders
 - support PHP 5.3, MySQL, PDO and WPDB.
 
+Credits
+---
+To [[badshark](), Jonathan]() and [Vlad]() for code reviews, tests and reports.
+
 Synopsis
 ---
 SQLAbstract is meant to safely query a single existing SQL database, eventually with prefixed table names.
