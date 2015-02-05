@@ -4,24 +4,6 @@ SQLAbstract.php
 
 From CRUD to paginated search and filter without SQL injection.
 
-The `SQLAbstract` abstract class provides support for the common feature requests in any SQL database application: Create, Read, Update, Delete, seach, filter and paginate results in variable orders and size.
-
-Without SQL injection, if you care.
-
-And eventually with database table prefixes, because legacy rules.
-
-The implementations of `SQLAbstract` allow their applications to access the database consistently, safely, limitedly and using the same code, regardless of the context of execution, inside or outside of a legacy framework.
-
-For instance, `SQLAbstractPDO` and `SQLAbstractWPDB` support plugins that can run the same code in and out of WordPress.
-
-Also, `SQLAbstract` works great with [JSONModel.php](https://github.com/unframed/JSONModel.php).
-
-### Where Less Is More
-
-I avoided the time-sink of writing yet another buggy SQL compiler by making the assumtion that when anything more complex than an SQL `WHERE` expression is required to query the database, then one or more SQL views must be created.
-
-Create as much SQL views as required and you will avoid the time-sink of maintaining complicated SQL statements entangled in PHP code and dispersed in your application's sources.
-
 Requirements
 ---
 - provide conveniences to query SQL without injection, inside and outside of a legacy framework
@@ -327,3 +309,24 @@ SELECT * FROM `prefix_task` WHERE `task_scheduled_for` > ?
 ~~~
 
 So, no user input should be passed as `where` option.
+
+Use Case
+---
+The `SQLAbstract` abstract class provides support for the common feature requests in any SQL database application: Create, Read, Update, Delete, seach, filter and paginate results in variable orders and size.
+
+Without SQL injection, if you care.
+
+And eventually with database table prefixes, because legacy rules.
+
+The implementations of `SQLAbstract` allow their applications to access the database consistently, safely, limitedly and using the same code, regardless of the context of execution, inside or outside of a legacy framework.
+
+For instance, `SQLAbstractPDO` and `SQLAbstractWPDB` support plugins that can run the same code in and out of WordPress.
+
+Also, `SQLAbstract` works great with [JSONModel.php](https://github.com/unframed/JSONModel.php).
+
+### Where Less Is More
+
+I avoided the time-sink of writing yet another buggy SQL compiler by making the assumtion that when anything more complex than an SQL `WHERE` expression is required to query the database, then one or more SQL views must be created.
+
+Create as much SQL views as required and you will avoid the time-sink of maintaining complicated SQL statements entangled in PHP code and dispersed in your application's sources.
+
