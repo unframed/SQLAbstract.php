@@ -8,6 +8,9 @@ class SQLAbstractTest extends SQLAbstract {
 	function __construct($prefix) {
 		$this->_prefix = $prefix;
 	}
+    function driver () {
+        return 'mysql';
+    }
     function transaction ($callable, $arguments=NULL) {
         return call_user_func_array($callable, $arguments);
     }

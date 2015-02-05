@@ -20,6 +20,7 @@ test: pull
 	php test/deleteStatement.php
 	./press up wp
 	php test/openMySQL.php
+	php test/driver.php
 	./press down wp
 
 pull: ${DEPS}

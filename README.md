@@ -2,13 +2,27 @@ SQLAbstract.php
 ---
 [![Build Status](https://travis-ci.org/unframed/SQLAbstract.php.svg)](https://travis-ci.org/unframed/SQLAbstract.php)
 
-A practical SQL abstraction class with concrete conveniences for query building and execution.
+From CRUD to paginated search and filter without SQL injection.
+
+The `SQLAbstract` abstract class provides support for the common feature requests in any SQL database application: Create, Read, Update, Delete, seach, filter and paginate results in variable orders and size.
+
+Without SQL injection, if you care.
+
+And eventually with database table prefixes, because legacy rules.
+
+The implementations of `SQLAbstract` allow their applications to access the database consistently, safely, limitedly and using the same code, regardless of the context of execution, inside or outside of a legacy framework.
+
+For instance, `SQLAbstractPDO` and `SQLAbstractWPDB` support plugins that can run the same code in and out of WordPress.
+
+Also, `SQLAbstract` works great with [JSONModel.php](https://github.com/unframed/JSONModel.php).
 
 Requirements
 ---
-- provide practical conveniences to query tables and views
+- provide conveniences to query SQL without injection, inside and outside of a legacy framework
+- support idiomatic CREATE, ALTER, SELECT, INSERT, REPLACE, UPDATE and DELETE statements.
+- covering applications from CRUD to paginated search and filter
 - with prefixed table names, guarded identifiers and custom placeholders
-- support PHP 5.3, PDO and WPDB.
+- support PHP 5.3, MySQL, PDO and WPDB.
 
 Synopsis
 ---

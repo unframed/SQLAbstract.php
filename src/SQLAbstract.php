@@ -8,6 +8,12 @@ abstract class SQLAbstract {
     // The practical abstractions.
 
     /**
+     * Return the database (PDO) name: 'mysql', etc.
+     *
+     * @return string
+     */
+    abstract function driver ();
+    /**
      * Invoke a callable with arguments inside an SQL transaction, rollback on
      * exception or commit and return the call's result.
      *
@@ -95,11 +101,9 @@ abstract class SQLAbstract {
     /**
      *
      */
-    function createViewStatement ($name, $select) {
+    function createViewStatement ($name, $select, $verb="CREATE OR REPLACE VIEW") {
         return (
-            "CREATE OR REPLACE VIEW "
-            .$this->prefixedIdentifier($name)
-            ." AS ".$select
+            $verb." ".$this->prefixedIdentifier($name)." AS ".$select
             );
     }
     /**
@@ -439,22 +443,38 @@ abstract class SQLAbstract {
         return $this->execute($sql, $params);
     }
 
-    // MySQL only ,-)
-
+    /**
+     * Return a SHOW TABLES LIKE equivalent SQL statement.
+     *
+     * @param string $like
+     * @return string
+     */
     function showTablesStatement ($like='') {
-        return (
-            "SHOW TABLES LIKE '".$this->prefixed($like)."%'"
-            );
+        switch($this->driver()) {
+            case 'mysql': return (
+                "SHOW TABLES LIKE '".$this->prefix($like)."%'"
+                );
+        }
+        throw $this->exception("Not implemented for ".$this->driver());
     }
 
     final function showTables ($like='') {
         return $this->fetchAllColumn($this->showTablesStatement($like));
     }
 
+    /**
+     * Return a SHOW COLUMNS FROM $table equivalent SQL statement.
+     *
+     * @param string $table
+     * @return string
+     */
     function showColumnsStatement ($name) {
-        return (
-            "SHOW COLUMNS FROM ".$this->prefixedIdentifier($name)
-            );
+        switch($this->driver()) {
+            case 'mysql': return (
+                "SHOW COLUMNS FROM ".$this->prefixedIdentifier($name)
+                );
+        }
+        throw $this->exception("Not implemented for ".$this->driver());
     }
 
     final function showColumns ($name, $key='Field') {

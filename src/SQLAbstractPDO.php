@@ -4,7 +4,7 @@ class SQLAbstractPDO extends SQLAbstract {
     /**
      *
      */
-    static function open ($dsn, $username=NULL, $password=NULL, $options=array()) {
+    final static function open ($dsn, $username=NULL, $password=NULL, $options=array()) {
         $options[PDO::ATTR_ERRMODE] = PDO::ERRMODE_WARNING;
         $pdo = new PDO($dsn, $username, $password, $options);
         return $pdo;
@@ -12,7 +12,7 @@ class SQLAbstractPDO extends SQLAbstract {
     /**
      *
      */
-    static function openMySQL ($name, $user, $password, $host='localhost', $port='3306') {
+    final static function openMySQL ($name, $user, $password, $host='localhost', $port='3306') {
         $dsn = 'mysql:host='.$host.';port='.$port.';dbname='.$name;
         $pdo = self::open(
             $dsn, $user, $password,
@@ -21,31 +21,35 @@ class SQLAbstractPDO extends SQLAbstract {
         return $pdo;
     }
     private $_pdo;
-    function __construct ($pdo, $prefix='') {
+    final function __construct ($pdo, $prefix='') {
         $this->_pdo = $pdo;
         $this->_prefix = $prefix;
     }
-    function pdo () {
+    final function pdo () {
         return $this->_pdo;
     }
-    function transaction ($callable, $arguments=NULL) {
+    final function driver () {
+        return $this->pdo()->getAttribute(PDO::ATTR_DRIVER_NAME);
+    }
+    final function transaction ($callable, $arguments=NULL) {
         $transaction = FALSE;
         if ($arguments === NULL) {
             $arguments = array($this);
         }
+        $pdo = $this->pdo();
         try {
-            $transaction = $this->_pdo->beginTransaction();
+            $transaction = $pdo->beginTransaction();
             $result = call_user_func_array($callable, $arguments);
-            $this->_pdo->commit();
+            $pdo->commit();
             return $result;
         } catch (Exception $e) {
             if ($transaction) {
-                $this->_pdo->rollBack();
+                $pdo->rollBack();
             }
             throw $this->exception($e->getMessage(), $e);
         }
     }
-    private function _bindValue ($st, $index, $value) {
+    final private function _bindValue ($st, $index, $value) {
         if (is_int($value)) {
             return $st->bindValue($index, $value, PDO::PARAM_INT);
         } elseif (is_bool($value)) {
@@ -58,9 +62,9 @@ class SQLAbstractPDO extends SQLAbstract {
             return $st->bindValue($index, $value); // String
         }
     }
-    private function _statement ($sql, $parameters) {
+    final private function _statement ($sql, $parameters) {
         try {
-            $st = $this->_pdo->prepare($sql);
+            $st = $this->pdo()->prepare($sql);
             if ($parameters !== NULL) {
                 if (JSONMessage::is_list($parameters)) {
                     $index = 1;
@@ -86,31 +90,31 @@ class SQLAbstractPDO extends SQLAbstract {
         }
         throw $exception;
     }
-    function execute ($sql, $parameters=NULL) {
+    final function execute ($sql, $parameters=NULL) {
         return $this->_statement($sql, $parameters)->rowCount();
     }
-    function lastInsertId () {
-        return $this->_pdo->lastInsertId();
+    final function lastInsertId () {
+        return $this->pdo()->lastInsertId();
     }
-    function fetchOne ($sql, $parameters=NULL) {
+    final function fetchOne ($sql, $parameters=NULL) {
         return $this->_statement($sql, $parameters)->fetch(PDO::FETCH_ASSOC);
     }
-    function fetchAll ($sql, $parameters=NULL) {
+    final function fetchAll ($sql, $parameters=NULL) {
         return $this->_statement($sql, $parameters)->fetchAll(PDO::FETCH_ASSOC);
     }
-    function fetchOneColumn ($sql, $parameters=NULL) {
+    final function fetchOneColumn ($sql, $parameters=NULL) {
         return $this->_statement($sql, $parameters)->fetch(PDO::FETCH_COLUMN);
     }
-    function fetchAllColumn ($sql, $parameters=NULL) {
+    final function fetchAllColumn ($sql, $parameters=NULL) {
         return $this->_statement($sql, $parameters)->fetchAll(PDO::FETCH_COLUMN);
     }
-    function prefix($name='') {
+    final function prefix($name='') {
         return $this->_prefix.$name;
     }
-    function identifier($name) {
+    final function identifier($name) {
         return "`".$name."`";
     }
-    function placeholder($value) {
+    final function placeholder($value) {
         return '?';
     }
 }

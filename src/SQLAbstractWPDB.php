@@ -4,7 +4,10 @@ class SQLAbstractWPDB extends SQLAbstract {
     function __construct ($prefix='') {
         $this->_prefix = $prefix;
     }
-    function transaction ($callable, $arguments=NULL) {
+    final function driver () {
+        return 'mysql';
+    }
+    final function transaction ($callable, $arguments=NULL) {
         global $wpdb;
         $transaction = FALSE;
         if ($arguments === NULL) {
@@ -19,7 +22,7 @@ class SQLAbstractWPDB extends SQLAbstract {
             $wpdb->query('ROLLBACK');
         }
     }
-    static private function _prepare ($sql, $parameters) {
+    final static private function _prepare ($sql, $parameters) {
         if ($parameters !== NULL && count($parameters) > 0) {
             global $wpdb;
             $arguments = array_merge(array($sql), $parameters);
@@ -27,38 +30,38 @@ class SQLAbstractWPDB extends SQLAbstract {
         }
         return $sql;
     }
-    function execute ($sql, $parameters=NULL) {
+    final function execute ($sql, $parameters=NULL) {
         global $wpdb;
         return $wpdb->query(self::_prepare($sql, $parameters));
     }
-    function lastInsertId () {
+    final function lastInsertId () {
         global $wpdb;
         return $wpdb->insert_id;
     }
-    function fetchOne ($sql, $parameters=NULL) {
+    final function fetchOne ($sql, $parameters=NULL) {
         global $wpdb;
         return $wpdb->get_row(self::_prepare($sql, $parameters), ARRAY_A);
     }
-    function fetchAll ($sql, $parameters=NULL) {
+    final function fetchAll ($sql, $parameters=NULL) {
         global $wpdb;
         return $wpdb->get_results(self::_prepare($sql, $parameters), ARRAY_A);
     }
-    function fetchOneColumn ($sql, $parameters=NULL) {
+    final function fetchOneColumn ($sql, $parameters=NULL) {
         global $wpdb;
         return $wpdb->get_var(self::_prepare($sql, $parameters));
     }
-    function fetchAllColumn ($sql, $parameters=NULL) {
+    final function fetchAllColumn ($sql, $parameters=NULL) {
         global $wpdb;
         return $wpdb->get_col(self::_prepare($sql, $parameters));
     }
-    function prefix ($name='') {
+    final function prefix ($name='') {
         global $wpdb;
         return $wpdb->prefix.$name;
     }
-    function identifier ($name) {
+    final function identifier ($name) {
         return "`".$name."`";
     }
-    function placeholder ($value) {
+    final function placeholder ($value) {
         if (!is_scalar($value)) {
             throw $this->exception("SQL query parameter not a scalar: ".json_encode($value));
         } elseif (is_integer($value) || is_bool($value)) {
@@ -68,4 +71,5 @@ class SQLAbstractWPDB extends SQLAbstract {
         }
         return '%s';
     }
+
 }
