@@ -16,6 +16,12 @@ For instance, `SQLAbstractPDO` and `SQLAbstractWPDB` support plugins that can ru
 
 Also, `SQLAbstract` works great with [JSONModel.php](https://github.com/unframed/JSONModel.php).
 
+### Where Less Is More
+
+I avoided the time-sink of writing yet another buggy SQL compiler by making the assumtion that when anything more complex than an SQL `WHERE` expression is required to query the database, then one or more SQL views must be created.
+
+Create as much SQL views as required and you will avoid the time-sink of maintaining complicated SQL statements entangled in PHP code and dispersed in your application's sources.
+
 Requirements
 ---
 - provide conveniences to query SQL without injection, inside and outside of a legacy framework
