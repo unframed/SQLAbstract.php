@@ -5,6 +5,9 @@ DEPS = deps \
 	deps/WordPress
 
 test: pull
+	php test/createTableStatement.php
+	php test/alterTableStatement.php
+	php test/createViewStatement.php
 	php test/columns.php
 	php test/selectByColumn.php
 	php test/selectInColumn.php

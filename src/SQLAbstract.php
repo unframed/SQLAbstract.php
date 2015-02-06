@@ -124,7 +124,7 @@ abstract class SQLAbstract {
         return (
             "CREATE TABLE IF NOT EXISTS "
             .$this->prefixedIdentifier($name)
-            ." (\n\t".implode(",\t\n", $lines)."\n\t)\n"
+            ." (\n ".implode(",\n ", $lines)."\n)\n"
             );
     }
     function alterTableStatement ($name, $columns) {
@@ -135,8 +135,9 @@ abstract class SQLAbstract {
         return (
             "ALTER TABLE "
             .$this->prefixedIdentifier($name)
-            ." ADD COLUMN "
-            .implode(", ADD COLUMN ", $lines)
+            ."\n ADD COLUMN "
+            .implode(",\n ADD COLUMN ", $lines)
+            ."\n"
             );
     }
     /**

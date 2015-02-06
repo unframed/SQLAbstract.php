@@ -6,15 +6,15 @@ From CRUD to paginated search and filter without SQL injection.
 
 Requirements
 ---
-- provide conveniences to query SQL without injection, inside and outside of a legacy framework
-- support idiomatic CREATE, ALTER, SELECT, INSERT, REPLACE, UPDATE and DELETE statements.
+- provide conveniences to query SQL without injection
+- for CREATE, ALTER, SELECT, INSERT, REPLACE, UPDATE and DELETE statements.
 - covering applications from CRUD to paginated search and filter
 - with prefixed table names, guarded identifiers and custom placeholders
 - support PHP 5.3, MySQL, PDO and WPDB.
 
 Credits
 ---
-To [[badshark](), Jonathan]() and [Vlad]() for code reviews, tests and reports.
+To [badshark](https://github.com/badshark), [JoN1oP](https://github.com/JoN1oP) and [mrcasual](https://github.com/mrcasual) for code reviews, tests and reports.
 
 Synopsis
 ---
