@@ -49,16 +49,13 @@ For instance, to create a view:
 $sql = new SQLAbstractPDO($pdo, 'prefix_');
 $sq->execute("
 
-REPLACE VIEW ".$sql->prefixedIdentifier('task_view')." AS 
-    SELECT 
-        *,
-        (task_scheduled_for > NOW()) 
-        as task_due,
-        (task_completed_at IS NULL OR task_completed_at < NOW()) 
-        as task_completed
-        (task_deleted_at NOT NULL) 
-        as task_deleted
-    FROM ".$sql->prefixedIdentifier('task').";
+CREATE OR REPLACE VIEW ".$sql->prefixedIdentifier('task_view')." AS 
+    SELECT *,
+        (task_scheduled_for < NOW ()) AS task_due
+        (task_completed_at IS NULL) AS task_todo,
+        (task_due AND task_todo) AS task_overdue,
+        (task_deleted_at IS NOT NULL) AS task_deleted
+    FROM ".$sql->prefixedIdentifier('task')."
 
 ");
 
@@ -78,7 +75,9 @@ $sq->fetchAll(
 ?>
 ~~~
 
-You may use `execute` to insert, replace and update or use one of the four `fetch*` methods to select and count rows, but conveniences are provided.
+You may use `execute` to insert, replace and update or use one of the four `fetch*` methods to select and count rows, but conveniences are provided to do many queries. 
+
+Those general purpose conveniences also guard the most common queries against SQL injection by the application's user.
 
 ### Insert
 
@@ -109,6 +108,8 @@ INSERT INTO `prefix_task` (
     `task_modified_at`, 
     ) VALUES (?, ?, ?, ?)
 ~~~
+
+Use input may be safely passed to `insert`, all keys and values are guarded against SQL injections.
 
 ### Options
 
@@ -156,7 +157,7 @@ SELECT COUNT(*) FROM `prefix_task`;
 SELECT `task_id` FROM `prefix_task` LIMIT 1;
 ~~~
 
-Note that selecting a column or rows with SQLAbstract *always* implies a `LIMIT` clause (with an `OFFSET` to zero by default).
+Note that selecting a column or rows with SQLAbstract *always* implies a `LIMIT` clause (with an `OFFSET` to zero by default). Safety does not stop at SQL injection, applications *must* avoid to fetch unlimited amount of data from the database.
 
 ### Select and Replace
 
@@ -192,7 +193,7 @@ REPLACE INTO `prefix_task` (
 ;
 ~~~
 
-Not very elegant in this case, but demonstrative of a common pattern when there is more than one row to fully read and replace.
+Not very elegant in this particular case, but demonstrative of a common pattern when there is more than one row to read and replace.
 
 ### Update
 
@@ -313,6 +314,106 @@ SELECT * FROM `prefix_task` WHERE `task_scheduled_for` > ?
 ~~~
 
 So, no user input should be passed as `where` option.
+
+### Replace Or Create View
+
+...
+
+~~~php
+<?php
+
+$sql->createViewStatement('task_view', ("
+    SELECT *,
+        (task_scheduled_for < NOW ()) AS task_due
+        (task_completed_at IS NULL) AS task_todo,
+        (task_due AND task_todo) AS task_overdue,
+        (task_deleted_at IS NOT NULL) AS task_deleted
+    FROM ".$sql->prefixedIdentifier('task')."
+"));
+
+?>
+~~~
+
+...
+
+~~~sql
+CREATE OR REPLACE VIEW `prefix_task_view` AS 
+    SELECT *,
+        (task_scheduled_for < NOW ()) AS task_due
+        (task_completed_at IS NULL) AS task_todo,
+        (task_due AND task_todo) AS task_overdue,
+        (task_deleted_at IS NOT NULL) AS task_deleted
+    FROM `prefix_task`
+~~~
+
+...
+
+### Create Table If Not Exists
+
+...
+
+~~~php
+<?php
+
+$sql->createStatement('task', array(
+    'task_id' => "INTEGER AUTOINCREMENT",
+    'task_name' => "VARCHAR(255) NOT NULL",
+    'task_scheduled_for' => "INTEGER UNSIGNED NOT NULL",
+    'task_completed_at' => "INTEGER UNSIGNED",
+    'task_created_at' => "INTEGER UNSIGNED NOT NULL",
+    'task_modified_at' => "INTEGER UNSIGNED NOT NULL",
+    'task_deleted_at' => "INTEGER UNSIGNED",
+    'task_description' => "MEDIUMTEXT"
+), array('task_id');
+
+?>
+~~~
+
+...
+
+~~~sql
+CREATE TABLE IF NOT EXISTS `prefix_task` (
+    `task_id` INTEGER AUTOINCREMENT,
+    `task_name` VARCHAR(255) NOT NULL,
+    `task_scheduled_for` INTEGER UNSIGNED NOT NULL,
+    `task_completed_at` INTEGER UNSIGNED,
+    `task_created_at` INTEGER UNSIGNED NOT NULL,
+    `task_modified_at` INTEGER UNSIGNED NOT NULL,
+    `task_deleted_at` INTEGER UNSIGNED,
+    `task_description` MEDIUMTEXT,
+    PRIMARY KEY (`task_id`)
+    );
+~~~
+
+### Show Tables and Columns
+
+The methods `showTables($like)` and `showColumns($table)` execute the two schema queries required to replace views, add new tables or add new columns to a database.
+
+To collect a simple `$schema` of tables, views and columns, do :
+
+~~~php
+<?php
+
+$schema = array();
+foreach($sql->showTables() as $prefixedName) {
+    $schema[$prefixedName] = $sql->showColumns($prefixedName);
+}
+
+?>
+~~~
+
+For MySQL the following SQL statements will be executed :
+
+~~~sql
+SHOW TABLES LIKE 'prefix_%'
+SHOW COLUMNS FROM `prefix_task`
+~~~
+
+For other databases the equivalent statements will be executed, returning a column of all matched tables and views, as `SHOW TABLES` does, and relations of `(Field, Type, Null, Default)`, a common subset of `SHOW COLUMNS`.
+
+### Alter Table
+
+...
 
 Use Case
 ---
