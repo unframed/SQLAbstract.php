@@ -21,9 +21,12 @@ class SQLAbstractPDO extends SQLAbstract {
         return $pdo;
     }
     private $_pdo;
+    private $_prefix;
+    private $_quotes;
     final function __construct ($pdo, $prefix='') {
         $this->_pdo = $pdo;
         $this->_prefix = $prefix;
+        $this->_quotes = $this->quotes();
     }
     final function pdo () {
         return $this->_pdo;
@@ -112,7 +115,11 @@ class SQLAbstractPDO extends SQLAbstract {
         return $this->_prefix.$name;
     }
     final function identifier($name) {
-        return "`".$name."`";
+        list($openQuote, $closeQuote) = $this->_quotes;
+        if (strpos($closeQuote, $name) !== FALSE) {
+            throw $this->exception('possible SQL injection in: '.json_encode($name));
+        }
+        return $openQuote.$name.$closeQuote;
     }
     final function placeholder($value) {
         return '?';

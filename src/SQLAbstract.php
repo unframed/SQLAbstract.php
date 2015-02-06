@@ -76,6 +76,14 @@ abstract class SQLAbstract {
 
     // The concrete conveniences: query builders and executers.
 
+    final function quotes () {
+        switch($this->driver()) {
+            case 'mysql': return array('`', '`'); // MySQL
+            case 'sqlsrv': return array('[', ']'); // Microsoft SQL Server
+        }
+        return array('"', '"'); // Postgresql, SQLite, etc ...
+    }
+
     /**
      * Validate the prefixed $name return the quoted identifier.
      *
@@ -251,20 +259,20 @@ abstract class SQLAbstract {
      *
      * @param array $filter
      * @param array $like
+     * @param array $whereAnd
+     * @param array $params
      * @return array ($where, $params)
      */
-    function filterLike($filter, $like=NULL) {
-        $whereFilter = array();
-        $params = array();
+    function filterLike ($filter, $like=NULL, $whereAnd=array(), $params=array()) {
         foreach ($filter as $column => $value) {
             if (!JSONMessage::is_list($value)) {
                 array_push(
-                    $whereFilter,
+                    $whereAnd,
                     $this->identifier($column)." = ".$this->placeholder($value)
                     );
                 array_push($params, $value);
             } elseif (count($value) > 0) {
-                array_push($whereFilter, (
+                array_push($whereAnd, (
                     $this->identifier($column)
                     ." IN (".implode(', ', array_map(
                         array($this, 'placeholder'), $value
@@ -274,34 +282,36 @@ abstract class SQLAbstract {
             }
         }
         if ($like !== NULL && count($like) > 0) {
-            $whereLike = array();
+            $whereOr = array();
             foreach ($like as $column => $value) {
                 array_push(
-                    $whereLike,
+                    $whereOr,
                     $this->identifier($column)." LIKE ".$this->placeholder($value)
                     );
                 array_push($params, $value);
             }
-            if (count($whereLike)>0) {
-                array_push($whereFilter, "(".implode(" OR ", $whereLike).")");
+            if (count($whereOr) > 0) {
+                array_push($whereAnd, "(".implode(" OR ", $whereOr).")");
             }
         }
-        return array(implode(" AND ", $whereFilter), $params);
+        return array(implode(" AND ", $whereAnd), $params);
     }
     /**
      *
      */
     function whereParams ($message) {
         if ($message->has('where')) {
-            return array(
-                $message->getString('where'),
+            return $this->filterLike(
+                $message->getMap('filter', array()),
+                $message->getMap('like', array()),
+                array($message->getString('where')),
                 $message->getList('params', array())
-                );
+            );
         } else {
             return $this->filterLike(
                 $message->getMap('filter', array()),
                 $message->getMap('like', array())
-                );
+            );
         }
     }
 
@@ -454,7 +464,16 @@ abstract class SQLAbstract {
         switch($this->driver()) {
             case 'mysql': return (
                 "SHOW TABLES LIKE '".$this->prefix($like)."%'"
-                );
+            );
+            case 'sqlite': return (
+                "SELECT name FROM sqlite_master WHERE type='table'"
+                ." AND name LIKE '".$this->prefix($like)."%'"
+            );
+            case 'pgsql': return (
+                "SELECT table_name FROM information_schema.tables"
+                ." WHERE table_name LIKE '".$this->prefix($like)."%'"
+                ." AND table_schema NOT IN ('pg_catalog', 'information_schema')"
+            );
         }
         throw $this->exception("Not implemented for ".$this->driver());
     }
@@ -472,8 +491,25 @@ abstract class SQLAbstract {
     function showColumnsStatement ($name) {
         switch($this->driver()) {
             case 'mysql': return (
-                "SHOW COLUMNS FROM ".$this->prefixedIdentifier($name)
-                );
+                "SHOW COLUMNS FROM ".$this->identifier($name)
+            );
+            case 'sqlite': return (
+                "SELECT"
+                ." name AS Field,"
+                ." type AS Type,"
+                ." notnull AS Null,"
+                ." dflt_value AS Default"
+                ." FROM PRAGMA table_info('".$name."')"
+            );
+            case 'pgsql': return (
+                "SELECT"
+                ." column_name AS Field,"
+                ." data_type AS Type,"
+                ." is_nullable AS Null"
+                ." column_default AS Default,"
+                ." FROM information_schema.columns"
+                ." WHERE table_name = '".$name."'"
+            );
         }
         throw $this->exception("Not implemented for ".$this->driver());
     }

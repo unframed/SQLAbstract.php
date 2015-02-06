@@ -1,6 +1,7 @@
 <?php
 
 class SQLAbstractWPDB extends SQLAbstract {
+    private $_prefix;
     function __construct ($prefix='') {
         $this->_prefix = $prefix;
     }
@@ -59,7 +60,12 @@ class SQLAbstractWPDB extends SQLAbstract {
         return $wpdb->prefix.$name;
     }
     final function identifier ($name) {
-        return "`".$name."`";
+        if (strpos('`', $name) !== FALSE) {
+            throw $this->exception('possible SQL injection in: '.json_encode($name));
+        } elseif (count($name) > 64) {
+            throw $this->exception('too long SQL identifier: '.json_encode($name));
+        }
+        return '`'.$name.'`';
     }
     final function placeholder ($value) {
         if (!is_scalar($value)) {
