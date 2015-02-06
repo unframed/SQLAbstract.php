@@ -21,6 +21,8 @@ test: pull
 	php test/insertStatement.php
 	php test/updateStatement.php
 	php test/deleteStatement.php
+	php test/showTablesStatement.php
+	php test/showColumnsStatement.php
 	./press up wp
 	php test/openMySQL.php
 	php test/driver.php
