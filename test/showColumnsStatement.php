@@ -8,6 +8,6 @@ $t = new TestMore();
 
 $t->plan(1);
 
-$sql = $sqlAbstract->showColumnsStatement('table');
+$sql = $sqlAbstract->showColumnsStatement($sqlAbstract->prefix('table'));
 
 $t->is($sql, "SHOW COLUMNS FROM `wp_table`", $sql);
