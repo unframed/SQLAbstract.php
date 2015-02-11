@@ -6,21 +6,42 @@ From CRUD to paginated search and filter without SQL injection.
 
 Requirements
 ---
-- provide conveniences to query SQL without injection
-- for CREATE, ALTER, SELECT, INSERT, REPLACE, UPDATE and DELETE statements.
-- covering applications from CRUD to paginated search and filter
-- with prefixed table names, guarded identifiers and custom placeholders
-- support PHP 5.3, MySQL, PDO and WPDB.
+- provide conveniences to query SQL;
+- safely, ie: with limits and without injections;
+- covering applications from CRUD to paginated search and filter;
+- with prefixed table and view names, guarded identifiers and custom placeholders;
+- support PHP 5.3, MySQL, SQLite and Postgresql via PDO and WPDB.
 
 Credits
 ---
-To [badshark](https://github.com/badshark), [JoN1oP](https://github.com/JoN1oP) and [mrcasual](https://github.com/mrcasual) for code reviews, tests and reports.
+To [badshark](https://github.com/badshark), [JoN1oP](https://github.com/JoN1oP) and [mrcasual](https://github.com/mrcasual) for requirements, code reviews, tests and reports.
 
 Synopsis
 ---
+
+* [Construct](#construct)
+    - [SQLAbstractPDO](#sqlabstractpdo)
+    - [SQLAbstractWPDB](#sqlabstractwpdb)
+    - [SQLAbstract](#sqlabstract)
+* [Execute](#execute)
+* [Fetch](#fetch)
+* [Insert](#insert)
+* [Count And Column](#count-and-column)
+* [Query Options](#query-options)
+* [Select And Replace](#select-and-replace)
+* [Update](#update)
+* [Delete](#delete)
+* [Safe Options](#safe-options)
+* [Unsafe Options](#unsafe-options)
+* [Replace Or Create View](#replace-or-create-view)
+* [Create Table If Not Exists](#create-table-if-not-exists)
+* [Show Tables And Columns](#show-tables-and-columns)
+* [Alter Table](#alter-table)
+* [Driver](#driver)
+
 SQLAbstract is meant to safely query a single existing SQL database, eventually with prefixed table names.
 
-So, let's assume a legacy 'task' table.
+So, let's assume a legacy table with a prefixed name :
 
 ~~~sql
 CREATE TABLE IF NOT EXISTS `prefix_task` (
@@ -35,18 +56,58 @@ CREATE TABLE IF NOT EXISTS `prefix_task` (
     );
 ~~~
 
-Because you will find no `create` methods in SQLAbstract.
+Now, let's construct a concrete `SQLAbstract` class to access that table.
 
-### Execute
+### Construct
 
-Although nothing prevents you to execute arbitrary SQL statements.
+The concrete classes available for now are: `SQLAbstractPDO` and `SQLAbstractWPDB`.
 
-For instance, to create a view:
+#### SQLAbstractPDO
+
+The `SQLAbstractPDO` class is intended to be used outside of a (legacy) framework. It provides a general purpose PDO connection factory as well as conveniences to open PDO connections to SQLite and MySQL.
+
+Use those factories to provide the first argument required by the constructor of `SQLAbstractPDO`. As second argument a table and view prefix can be given, it is optional and defaults to the empty string.
 
 ~~~php
 <?php
 
+$pdo = SQLAbstractPDO::openSQLite('test.db');
 $sql = new SQLAbstractPDO($pdo, 'prefix_');
+echo "Connected via the PDO driver named '".$sql->driver()."'.";
+
+?>
+~~~
+
+Remember that it is not the purpose of `SQLAbstract` implementations to abstract the particulars of the SQL databases used by an application. The purpose of `SQLAbstract` is to safely support one common subset of SQL with wathever database API available be it PHP's own `PDO` or WordPress' `WPDB`.
+
+#### SQLAbstractWPDB
+
+For instance, we could also have used the `SQLAbstractWPDB` class instead of `SQLAbstractPDO` :
+
+~~~php
+<?php
+
+$sql = new SQLAbstractWPDB();
+echo "Connected via the WPDB to '".$sql->driver()."'.";
+
+?>
+~~~
+
+Since WordPress provides its own global `$wpdb` instance, with an open connection to a database and a prefix, there is no need to supply anything to the constructor of `SQLAbstractWPDB`.
+
+#### SQLAbstract
+
+Extending your own `SQLAbstract` class for another framework than WordPress is relatively simple and you should look at the two concrete classes provided to see what must be implemented and how.
+
+### Execute
+
+Nothing in `SQLAbstract` prevents you to execute arbitrary SQL statements.
+
+For instance, to create a view on the example legacy `tasks` table defined above :
+
+~~~php
+<?php
+
 $sq->execute("
 
 CREATE OR REPLACE VIEW ".$sql->prefixedIdentifier('task_view')." AS 
@@ -62,22 +123,26 @@ CREATE OR REPLACE VIEW ".$sql->prefixedIdentifier('task_view')." AS
 ?>
 ~~~
 
-Or fetch all tasks rows at once:
+It is not the purpose of `SQLAbstract` to get in its applications' ways.
+
+### Fetch
+
+So application can also execute arbitrary parametrized statements and fetch row(s) and column(s).
+
+To fetch all overdue tasks rows and columns from the view created above :
 
 ~~~php
 <?php
 
-$sql = new SQLAbstractPDO($pdo, 'prefix_');
-$sq->fetchAll(
+$overdueTasks = $sq->fetchAll(
     "SELECT * FROM ".$sql->prefixedIdentifier('task_view')
+    ." WHERE task_overdue IS TRUE"
     );
 
 ?>
 ~~~
 
-You may use `execute` to insert, replace and update or use one of the four `fetch*` methods to select and count rows, but conveniences are provided to do many queries. 
-
-Those general purpose conveniences also guard the most common queries against SQL injection by the application's user.
+You may use `execute` to insert, replace and update or use one of the four `fetch*` methods to select and count rows, but conveniences are provided to do many queries. And those general purpose conveniences can guard the most common queries against SQL injection by the application's user.
 
 ### Insert
 
@@ -111,29 +176,6 @@ INSERT INTO `prefix_task` (
 
 Use input may be safely passed to `insert`, all keys and values are guarded against SQL injections.
 
-### Options
-
-Before we move on to `select` the inserted row, let's pause and consider the set of options used by SQAbstract methods to build an SQL statement, eventually safely.
-
-Here are the defaults for the safe options :
-
-~~~php
-<?php
-
-$options = array(
-    "columns": array(),
-    "filter": array(),
-    "like": array(),
-    "order": array(),
-    "limit": 30,
-    "offset": 0
-)
-
-?>
-~~~
-
-We will see examples below.
-
 ### Count and Column
 
 To count all tasks and fetch the whole `task_id` column, do :
@@ -157,7 +199,32 @@ SELECT COUNT(*) FROM `prefix_task`;
 SELECT `task_id` FROM `prefix_task` LIMIT 1;
 ~~~
 
-Note that selecting a column or rows with SQLAbstract *always* implies a `LIMIT` clause (with an `OFFSET` to zero by default). Safety does not stop at SQL injection, applications *must* avoid to fetch unlimited amount of data from the database.
+Note that selecting a column or rows with SQLAbstract *always* implies a `LIMIT` clause (with an `OFFSET` to zero by default).
+
+Because safety does not stop at SQL injection, applications *must* avoid to fetch unlimited amount of data from the database.
+
+### Query Options
+
+Before we move on to `select` the inserted row, let's pause and consider the set of options used by SQAbstract methods to build an SQL statement safely.
+
+Here are the safe defaults for the combined safe options used by `count`, `column`, `select`, `update` and `delete` :
+
+~~~php
+<?php
+
+$options = array(
+    'columns': array(),
+    'filter': array(),
+    'like': array(),
+    'order': array(),
+    'limit': 30,
+    'offset': 0
+)
+
+?>
+~~~
+
+The options `offset`, `limit`, `order` and `columns` are simply ignored by the methods `delete`, `update` and `count`.
 
 ### Select and Replace
 
@@ -278,18 +345,33 @@ SELECT * FROM `prefix_task` WHERE
         `task_name` like ? 
         OR `task_description` like ?
         ) 
+    LIMIT 30 OFFSET 0
 ;
 ~~~
 
 Given all SQL views on tables these options could implement all selections.
 
-But we don't have *all* views to select from.
+There is a flag argument to assert safe options when calling the `count`, `column`, `select`, `update` and `delete` methods. Use it in functions handling user input in options directly to one of those `SQLAbstract` methods.
+
+For instance :
+
+~~~php
+<?php
+
+function userSelectTasks($sql, $options) {
+    return $sql->select("task_view", $options, TRUE);
+}
+
+?>
+~~~
+
+Note that if an unsafe option is set, the call to `select` will throw an exception instead of letting the user input execute injected SQL. And since a `limit` default is always set, no unlimited amount of data will be queried.
+
+This is what "safe" means here.
 
 ### Unsafe Options
 
-The `where` and `params` options allow to specify an SQL expression and a list of execution parameters.
-
-Note that applications are expected to use the `identifier` and `placeholder` methods to build the expression.
+The `where` and `params` options allow to specify an SQL expression and a list of execution parameters. And they are not safe. Applications are expected to use the `identifier` and `placeholder` methods to build the expression.
 
 ~~~php
 <?php
@@ -315,9 +397,13 @@ SELECT * FROM `prefix_task` WHERE `task_scheduled_for` > ?
 
 So, no user input should be passed as `where` option.
 
+Use with care.
+
 ### Replace Or Create View
 
-...
+Whenever an unsafe option is required, more column(s) in more view(s) declared in the data model is probably a better solution than an SQL expression with positional parameters in a PHP function somewhere.
+
+For instance, to filter tasks by various states, use `createViewStatement` :
 
 ~~~php
 <?php
@@ -414,6 +500,10 @@ For other databases the equivalent statements will be executed, returning a colu
 ### Alter Table
 
 ...
+
+### Driver
+
+The `driver` method can eventually be used by applications of `SQLAbstractPDO` to support the different SQL dialects implemented by different databases (for instance, string concatenation in SQL is provided by the `||` operator for most SQL database but it is available as the `CONCAT()` function in MySQL).
 
 Use Case
 ---

@@ -2,7 +2,7 @@
 
 class SQLAbstractPDO extends SQLAbstract {
     /**
-     *
+     * Open a PDO connection, using PDO::ERRMODE_WARNING.
      */
     final static function open ($dsn, $username=NULL, $password=NULL, $options=array()) {
         $options[PDO::ATTR_ERRMODE] = PDO::ERRMODE_WARNING;
@@ -10,7 +10,13 @@ class SQLAbstractPDO extends SQLAbstract {
         return $pdo;
     }
     /**
-     *
+     * Open a PDO to SQLite.
+     */
+    final static function openSQLite ($name='memory') {
+        return self::open('sqlite:'.$name);
+    }
+    /**
+     * Open a PDO connection to MySQL, properly.
      */
     final static function openMySQL ($name, $user, $password, $host='localhost', $port='3306') {
         $dsn = 'mysql:host='.$host.';port='.$port.';dbname='.$name;
