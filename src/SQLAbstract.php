@@ -469,13 +469,11 @@ abstract class SQLAbstract {
                 "SELECT name FROM sqlite_master WHERE type='table'"
                 ." AND name LIKE '".$this->prefix($like)."%'"
             );
-            case 'pgsql': return (
-                "SELECT table_name FROM information_schema.tables"
-                ." WHERE table_name LIKE '".$this->prefix($like)."%'"
-                ." AND table_schema NOT IN ('pg_catalog', 'information_schema')"
-            );
         }
-        throw $this->exception("Not implemented for ".$this->driver());
+        return (
+            "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES"
+            ." WHERE TABLE_NAME LIKE '".$this->prefix($like)."%'"
+        );
     }
 
     final function showTables ($like='') {
@@ -501,17 +499,17 @@ abstract class SQLAbstract {
                 ." dflt_value AS Default"
                 ." FROM PRAGMA table_info('".$name."')"
             );
-            case 'pgsql': return (
-                "SELECT"
-                ." column_name AS Field,"
-                ." data_type AS Type,"
-                ." is_nullable AS Null"
-                ." column_default AS Default,"
-                ." FROM information_schema.columns"
-                ." WHERE table_name = '".$name."'"
-            );
         }
-        throw $this->exception("Not implemented for ".$this->driver());
+        return (
+            "SELECT"
+            ." COLUMN_NAME AS Field,"
+            ." DATA_TYPE AS Type,"
+            ." IS_NULLABLE AS Null"
+            ." COLUMN_DEFAULT AS Default,"
+            ." FROM INFORMATION_SCHEMA.COLUMNS"
+            ." WHERE TABLE_NAME = '".$name."'"
+            ." ORDER BY ORDINAL_POSITION"
+        );
     }
 
     final function showColumns ($name, $key='Field') {
