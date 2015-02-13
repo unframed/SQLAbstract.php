@@ -36,7 +36,7 @@ Synopsis
 * [Replace Or Create View](#replace-or-create-view)
 * [Create Table If Not Exists](#create-table-if-not-exists)
 * [Show Tables And Columns](#show-tables-and-columns)
-* [Alter Table](#alter-table)
+* [Add Columns](#add-columns)
 * [Driver](#driver)
 
 SQLAbstract is meant to safely query a single existing SQL database, eventually with prefixed table names.
@@ -408,7 +408,7 @@ For instance, to filter tasks by various states, use `createViewStatement` :
 ~~~php
 <?php
 
-$sql->createViewStatement('task_view', ("
+echo $sql->createViewStatement('task_view', ("
     SELECT *,
         (task_scheduled_for < NOW ()) AS task_due
         (task_completed_at IS NULL) AS task_todo,
@@ -420,7 +420,7 @@ $sql->createViewStatement('task_view', ("
 ?>
 ~~~
 
-...
+The echo is equivalent to :
 
 ~~~sql
 CREATE OR REPLACE VIEW `prefix_task_view` AS 
@@ -432,16 +432,16 @@ CREATE OR REPLACE VIEW `prefix_task_view` AS
     FROM `prefix_task`
 ~~~
 
-...
+Just idiomatic SQL, the safe way to replace a view.
 
 ### Create Table If Not Exists
 
-...
+A statement is also provided for table creation :
 
 ~~~php
 <?php
 
-$sql->createStatement('task', array(
+echo $sql->createStatement('task', array(
     'task_id' => "INTEGER AUTOINCREMENT",
     'task_name' => "VARCHAR(255) NOT NULL",
     'task_scheduled_for' => "INTEGER UNSIGNED NOT NULL",
@@ -455,7 +455,7 @@ $sql->createStatement('task', array(
 ?>
 ~~~
 
-...
+Again, idiomatic SQL :
 
 ~~~sql
 CREATE TABLE IF NOT EXISTS `prefix_task` (
@@ -470,6 +470,10 @@ CREATE TABLE IF NOT EXISTS `prefix_task` (
     PRIMARY KEY (`task_id`)
     );
 ~~~
+
+Note how strictly no assertion are made on the column type definitions.
+
+Legacy rules and defining a collation for MySQL should be possible.
 
 ### Show Tables and Columns
 
@@ -497,31 +501,52 @@ SHOW COLUMNS FROM `prefix_task`
 
 For other databases the equivalent statements will be executed, returning a column of all matched tables and views, as `SHOW TABLES` does, and relations of `(Field, Type, Null, Default)`, a common subset of `SHOW COLUMNS`.
 
-### Alter Table
+### Add Columns
 
-...
+The alter statement provided add columns to a table.
+
+~~~php
+<?php
+
+echo $sql->alterTableStatement('tasks', array(
+    'task_json' => 'MEDIUMTEXT'
+));
+
+?>
+~~~
+
+Nothing more.
+
+~~~sql
+ALTER TABLE `prefix_tasks` ADD COLUMN `task_json` MEDIUMTEXT
+~~~
+
+And that's it for the last SQL verb abstracted.
 
 ### Driver
 
-The `driver` method can eventually be used by applications of `SQLAbstractPDO` to support the different SQL dialects implemented by different databases (for instance, string concatenation in SQL is provided by the `||` operator for most SQL database but it is available as the `CONCAT()` function in MySQL).
+Under this SQL abstraction is a database.
 
-Use Case
----
-The `SQLAbstract` abstract class provides support for the common feature requests in any SQL database application: Create, Read, Update, Delete, seach, filter and paginate results in variable orders and size.
+~~~php
+<?php
 
-Without SQL injection, if you care.
+$pdo = new SQLAbstractPDO::openSQLite('test.db');
+$sql = new SQLAbstractPDO($pdo, 'prefix_');
+echo "Connected via the PDO to '".$sql->driver()."'.";
 
-And eventually with database table prefixes, because legacy rules.
+?>
+~~~
 
-The implementations of `SQLAbstract` allow their applications to access the database consistently, safely, limitedly and using the same code, regardless of the context of execution, inside or outside of a legacy framework.
+The `driver` method can eventually be used by applications of `SQLAbstract` to support the different SQL dialects implemented by different databases.
 
-For instance, `SQLAbstractPDO` and `SQLAbstractWPDB` support plugins that can run the same code in and out of WordPress.
+For instance, string concatenation in SQL is provided by the `||` operator for most SQL database but it is available as the `CONCAT()` function in MySQL.
 
-Also, `SQLAbstract` works great with [JSONModel.php](https://github.com/unframed/JSONModel.php).
+### SQL
 
-### Where Less Is More
-
-I avoided the time-sink of writing yet another buggy SQL compiler by making the assumtion that when anything more complex than an SQL `WHERE` expression is required to query the database, then one or more SQL views must be created.
+When anything more complex than an SQL `WHERE` expression is required in an application to query the database then one or more SQL views must be created.
 
 Create as much SQL views as required and you will avoid the time-sink of maintaining complicated SQL statements entangled in PHP code and dispersed in your application's sources.
 
+And that's the one very big good reason you don't need what ORMs suck at: adding side-effects to something that should not have been done in the first place just to avoid *all* SQL.
+
+If you still want objects and classes, SQL views *and* what people love in ORMs is available on top of `SQLAbstract`, in [JSONModel.php](https://github.com/unframed/JSONModel.php).
