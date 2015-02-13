@@ -2,15 +2,15 @@ SQLAbstract.php
 ---
 [![Build Status](https://travis-ci.org/unframed/SQLAbstract.php.svg)](https://travis-ci.org/unframed/SQLAbstract.php)
 
-From CRUD to paginated search and filter without SQL injection.
+Safe SQL abstractions for PHP and WordPress.
 
 Requirements
 ---
-- provide conveniences to query SQL;
-- safely, ie: with limits and without injections;
+- provide conveniences to query SQL tables and views;
+- eventually safely, ie: with limits and without injections;
 - covering applications from CRUD to paginated search and filter;
 - with prefixed table and view names, guarded identifiers and custom placeholders;
-- support PHP 5.3, MySQL, SQLite and Postgresql via PDO and WPDB.
+- support PHP 5.3, MySQL, SQLite, PDO and WPDB.
 
 Credits
 ---
