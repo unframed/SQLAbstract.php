@@ -148,6 +148,20 @@ abstract class SQLAbstract {
             ."\n"
             );
     }
+    function createIndexStatement ($name, $columns, $slug=NULL) {
+        $indexOn = $this->columns($columns);
+        if ($slug === NULL) {
+            $indexName = $name.'_'.substr(sha1($indexOn), 0, 6);
+        } else {
+            $indexName = $name.'_'.$slug;
+        }
+        return (
+            "CREATE INDEX "
+            .$this->prefixedIdentifier($indexName)
+            ."ON ".$this->prefixedIdentifier($name)
+            ."(".$indexOn.")"
+        );
+    }
     /**
      * Return an SQL statement with a list of parameters to select
      * given $columns (or all) from a $view where $column equals $key.
@@ -489,7 +503,7 @@ abstract class SQLAbstract {
     function showColumnsStatement ($name) {
         switch($this->driver()) {
             case 'mysql': return (
-                "SHOW COLUMNS FROM ".$this->identifier($name)
+                "SHOW COLUMNS FROM ".$this->prefixedIdentifier($name)
             );
             case 'sqlite': return (
                 "SELECT"
@@ -497,7 +511,7 @@ abstract class SQLAbstract {
                 ." type AS Type,"
                 ." notnull AS Null,"
                 ." dflt_value AS Default"
-                ." FROM PRAGMA table_info('".$name."')"
+                ." FROM PRAGMA table_info('".$this->prefix($name)."')"
             );
         }
         return (
@@ -507,7 +521,7 @@ abstract class SQLAbstract {
             ." IS_NULLABLE AS Null"
             ." COLUMN_DEFAULT AS Default,"
             ." FROM INFORMATION_SCHEMA.COLUMNS"
-            ." WHERE TABLE_NAME = '".$name."'"
+            ." WHERE TABLE_NAME = '".$this->prefix($name)."'"
             ." ORDER BY ORDINAL_POSITION"
         );
     }
@@ -520,5 +534,37 @@ abstract class SQLAbstract {
         }
         return $columns;
     }
-
+    function showIndexes ($name) {
+        switch($this->driver()) {
+            case 'mysql':
+                $indexes = array();
+                $rows = $this->fetchAll(
+                    "SHOW INDEXES FROM ".$this->prefixedIdentifier($name)
+                    ." WHERE Non_unique = 1"
+                );
+                foreach ($rows as $row) {
+                    $indexName = $row['Key_name'];
+                    if (!in_array($indexName, $indexes)) {
+                        $indexes[] = $indexName;
+                    }
+                }
+                return $indexes;
+            case 'sqlite':
+                return $this->fetchAllColumn(
+                    "SELECT name FROM sqlite_master"
+                    ." WHERE type = 'index'"
+                    ." AND sql = NULL"
+                    ." AND tbl_name = '".$this->prefix($name)."'"
+                );
+            case 'pgsql':
+                return $this->fetchAllColumn(
+                    "SELECT ci.relname"
+                    ." FROM pg_index i, pg_class ci, pg_class ct"
+                    ." WHERE i.indexrelid = ci.oid"
+                    ." AND i.indrelid = ct.oid"
+                    ." AND ct.relname='".$this->prefix($name)."'"
+                );
+        }
+        throw $this->exception("Not implemented for ".$this->driver());
+    }
 }
