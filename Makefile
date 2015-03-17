@@ -23,6 +23,7 @@ test: pull
 	php test/deleteStatement.php
 	php test/showTablesStatement.php
 	php test/showColumnsStatement.php
+	php test/indexRows.php
 	php test/openSQLite.php
 	./press up wp
 	php test/openMySQL.php

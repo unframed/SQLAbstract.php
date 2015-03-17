@@ -1,4 +1,10 @@
 <?php
+/**
+ * @version 0.8
+ * @todo more test and documentation
+ * @copyright Laurent Szyster 2014 - 2015
+ * @author laurentszyster@gmail.com
+ */
 
 /**
  * An SQL data abstraction layer class.
@@ -89,8 +95,19 @@ abstract class SQLAbstract {
      *
      * @param string $name
      * @return string
+     * @deprecated use `prefixed` instead
      */
     function prefixedIdentifier ($name) {
+        return $this->identifier($this->prefix($name));
+    }
+
+    /**
+     * Validate the prefixed $name return the quoted identifier.
+     *
+     * @param string $name
+     * @return string
+     */
+    function prefixed ($name) {
         return $this->identifier($this->prefix($name));
     }
 
@@ -111,7 +128,7 @@ abstract class SQLAbstract {
      */
     function createViewStatement ($name, $select, $verb="CREATE OR REPLACE VIEW") {
         return (
-            $verb." ".$this->prefixedIdentifier($name)." AS ".$select
+            $verb." ".$this->prefixed($name)." AS ".$select
             );
     }
     /**
@@ -131,7 +148,7 @@ abstract class SQLAbstract {
         }
         return (
             "CREATE TABLE IF NOT EXISTS "
-            .$this->prefixedIdentifier($name)
+            .$this->prefixed($name)
             ." (\n ".implode(",\n ", $lines)."\n)\n"
             );
     }
@@ -142,7 +159,7 @@ abstract class SQLAbstract {
         }
         return (
             "ALTER TABLE "
-            .$this->prefixedIdentifier($name)
+            .$this->prefixed($name)
             ."\n ADD COLUMN "
             .implode(",\n ADD COLUMN ", $lines)
             ."\n"
@@ -157,8 +174,8 @@ abstract class SQLAbstract {
         }
         return (
             "CREATE INDEX "
-            .$this->prefixedIdentifier($indexName)
-            ."ON ".$this->prefixedIdentifier($name)
+            .$this->prefixed($indexName)
+            ."ON ".$this->prefixed($name)
             ."(".$indexOn.")"
         );
     }
@@ -174,7 +191,7 @@ abstract class SQLAbstract {
     function selectByColumn ($view, $column, $key, $columns) {
         return array(
             "SELECT ".$this->columns($columns)
-            ." FROM ".$this->prefixedIdentifier($view)
+            ." FROM ".$this->prefixed($view)
             ." WHERE ".$this->identifier($column)
             ." = ".$this->placeholder($key),
             array($key)
@@ -210,7 +227,7 @@ abstract class SQLAbstract {
         }
         return array((
             "SELECT ".$this->columns($columns)
-            ." FROM ".$this->prefixedIdentifier($view)
+            ." FROM ".$this->prefixed($view)
             ." WHERE ".$this->identifier($column)
             ." IN (".$placeholders.")"
             ), $keys);
@@ -233,7 +250,7 @@ abstract class SQLAbstract {
         }
         return array((
             "SELECT ".$this->columns($columns)
-            ." FROM ".$this->prefixedIdentifier($view)
+            ." FROM ".$this->prefixed($view)
             ." WHERE ".implode(" AND ", $expressions)
             ), $params);
 
@@ -341,7 +358,7 @@ abstract class SQLAbstract {
     function countStatement ($view, $options) {
         list($where, $params) = $this->whereParams(new JSONMessage($options));
         $sql = (
-            "SELECT COUNT(*) FROM ".$this->prefixedIdentifier($view)
+            "SELECT COUNT(*) FROM ".$this->prefixed($view)
             .($where === '' ? "" : " WHERE ".$where)
             );
         return array($sql, $params);
@@ -362,7 +379,7 @@ abstract class SQLAbstract {
         $orders = $m->getList('orders', array());
         $sql = (
             "SELECT ".$this->columns($columns)
-            ." FROM ".$this->prefixedIdentifier($view)
+            ." FROM ".$this->prefixed($view)
             .($where === '' ? "" : " WHERE ".$where)
             .$this->orderBy($orders)
             );
@@ -380,6 +397,41 @@ abstract class SQLAbstract {
         }
         list($sql, $params) = $this->selectStatement($view, $options);
         return $this->fetchAll($sql, $params);
+    }
+
+    static function indexColumns ($keys) {
+        return (count($keys) === 2) ? array($keys[0], $keys[1]) : array($keys[0], NULL);
+    }
+
+    static function indexRows ($rows) {
+        $index = array();
+        if (count($rows) > 0) {
+            list($keyColumn, $valueColumn) = self::indexColumns(array_keys($rows[0]));
+            if ($valueColumn === NULL) { // index the whole row
+                foreach ($rows as $row) {
+                    $key = strval($row[$keyColumn]);
+                    if (array_key_exists($key, $index)) {
+                        $index[$key][] = $row;
+                    } else {
+                        $index[$key] = array($row);
+                    }
+                }
+            } else {
+                foreach ($rows as $row) { // index one column only
+                    $key = strval($row[$keyColumn]);
+                    if (array_key_exists($key, $index)) {
+                        $index[$key][] = $row[$valueColumn];
+                    } else {
+                        $index[$key] = array($row[$valueColumn]);
+                    }
+                }
+            }
+        }
+        return $index;
+    }
+
+    function index ($view, $options, $safe=FALSE) {
+        return self::indexRows($this->select($view, $options, $safe));
     }
 
     function column ($view, $options, $safe=FALSE) {
@@ -403,7 +455,7 @@ abstract class SQLAbstract {
         $params = array_values($map);
         return array(
             $verb." INTO "
-            .$this->prefixedIdentifier($table)
+            .$this->prefixed($table)
             ." (".implode(", ", array_map(array($this, 'identifier'), $keys)).")"
             ." VALUES (".implode(", ",
                 array_map(array($this, 'placeholder'), $params)
@@ -436,7 +488,7 @@ abstract class SQLAbstract {
         list($whereExpression, $whereParams) = $this->whereParams(new JSONMessage($options));
         return array((
             "UPDATE "
-            .$this->prefixedIdentifier($table)
+            .$this->prefixed($table)
             ." SET "
             .implode(", ", $setExpressions)
             ." WHERE ".$whereExpression
@@ -455,7 +507,7 @@ abstract class SQLAbstract {
         list($whereExpression, $whereParams) = $this->whereParams(new JSONMessage($options));
         return array((
             "DELETE FROM "
-            .$this->prefixedIdentifier($table)
+            .$this->prefixed($table)
             ." WHERE ".$whereExpression
             ), $whereParams);
     }
@@ -503,7 +555,7 @@ abstract class SQLAbstract {
     function showColumnsStatement ($name) {
         switch($this->driver()) {
             case 'mysql': return (
-                "SHOW COLUMNS FROM ".$this->prefixedIdentifier($name)
+                "SHOW COLUMNS FROM ".$this->prefixed($name)
             );
             case 'sqlite': return (
                 "SELECT"
@@ -539,7 +591,7 @@ abstract class SQLAbstract {
             case 'mysql':
                 $indexes = array();
                 $rows = $this->fetchAll(
-                    "SHOW INDEXES FROM ".$this->prefixedIdentifier($name)
+                    "SHOW INDEXES FROM ".$this->prefixed($name)
                     ." WHERE Non_unique = 1"
                 );
                 foreach ($rows as $row) {

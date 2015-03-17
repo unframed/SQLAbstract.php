@@ -1,10 +1,6 @@
 <?php
 
 class SQLAbstractWPDB extends SQLAbstract {
-    private $_prefix;
-    function __construct ($prefix='') {
-        $this->_prefix = $prefix;
-    }
     final function driver () {
         return 'mysql';
     }
