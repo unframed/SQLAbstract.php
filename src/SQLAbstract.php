@@ -403,35 +403,36 @@ abstract class SQLAbstract {
         return (count($keys) === 2) ? array($keys[0], $keys[1]) : array($keys[0], NULL);
     }
 
-    static function indexRows ($rows) {
-        $index = array();
-        if (count($rows) > 0) {
-            list($keyColumn, $valueColumn) = self::indexColumns(array_keys($rows[0]));
-            if ($valueColumn === NULL) { // index the whole row
-                foreach ($rows as $row) {
-                    $key = strval($row[$keyColumn]);
-                    if (array_key_exists($key, $index)) {
-                        $index[$key][] = $row;
-                    } else {
-                        $index[$key] = array($row);
-                    }
+    static function indexRows ($rows, $keyColumn, $valueColumn, &$index) {
+        if ($valueColumn === NULL) { // index the whole row
+            foreach ($rows as $row) {
+                $key = strval($row[$keyColumn]);
+                if (array_key_exists($key, $index)) {
+                    $index[$key][] = $row;
+                } else {
+                    $index[$key] = array($row);
                 }
-            } else {
-                foreach ($rows as $row) { // index one column only
-                    $key = strval($row[$keyColumn]);
-                    if (array_key_exists($key, $index)) {
-                        $index[$key][] = $row[$valueColumn];
-                    } else {
-                        $index[$key] = array($row[$valueColumn]);
-                    }
+            }
+        } else {
+            foreach ($rows as $row) { // index one column only
+                $key = strval($row[$keyColumn]);
+                if (array_key_exists($key, $index)) {
+                    $index[$key][] = $row[$valueColumn];
+                } else {
+                    $index[$key] = array($row[$valueColumn]);
                 }
             }
         }
-        return $index;
     }
 
     function index ($view, $options, $safe=FALSE) {
-        return self::indexRows($this->select($view, $options, $safe));
+        $rows = $this->select($view, $options, $safe);
+        $index = array();
+        if (count($rows) > 0) {
+            list($keyColumn, $valueColumn) = self::indexColumns(array_keys($rows[0]));
+            self::indexRows($rows, $keyColumn, $valueColumn, $index);
+        }
+        return $index;
     }
 
     function column ($view, $options, $safe=FALSE) {

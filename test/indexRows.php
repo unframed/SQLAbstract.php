@@ -20,9 +20,10 @@ list($keyColumn, $valueColumn) = SQLAbstract::indexColumns(array_keys($rows[0]))
 $t->is($keyColumn, 'index', "SQLAbstract::indexColumns");
 $t->is($valueColumn, 'value', "SQLAbstract::indexColumns");
 
-$index = new JSONMessage(SQLAbstract::indexRows($rows));
-
-$t->is($index->uniform(), (
+$index = array();
+SQLAbstract::indexRows($rows, $keyColumn, $valueColumn, $index);
+$message = new JSONMessage($index);
+$t->is($message->uniform(), (
 	'{'
 	.'"1":[3,2,4],'
 	.'"2":[0,5],'
