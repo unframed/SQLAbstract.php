@@ -351,7 +351,7 @@ abstract class SQLAbstract {
             array_key_exists('where', $options) ||
             array_key_exists('params', $options)
             ) {
-            throw $this->exception('unsafe options defined');
+            throw new Exception('unsafe options defined');
         }
     }
 
