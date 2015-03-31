@@ -105,17 +105,37 @@ class SQLAbstractPDO extends SQLAbstract {
     final function lastInsertId () {
         return $this->pdo()->lastInsertId();
     }
+    static private function _fetchOrNull ($result) {
+        if ($result === FALSE) {
+            return NULL;
+        }
+        return $result;
+    }
+    static private function _fetchOrEmptyArray ($result) {
+        if ($result === FALSE) {
+            return array();
+        }
+        return $result;
+    }
     final function fetchOne ($sql, $parameters=NULL) {
-        return $this->_statement($sql, $parameters)->fetch(PDO::FETCH_ASSOC);
+        return SQLAbstractPDO::_fetchOrNull(
+            $this->_statement($sql, $parameters)->fetch(PDO::FETCH_ASSOC)
+        );
     }
     final function fetchAll ($sql, $parameters=NULL) {
-        return $this->_statement($sql, $parameters)->fetchAll(PDO::FETCH_ASSOC);
+        return SQLAbstractPDO::_fetchOrEmptyArray(
+            $this->_statement($sql, $parameters)->fetchAll(PDO::FETCH_ASSOC)
+        );
     }
     final function fetchOneColumn ($sql, $parameters=NULL) {
-        return $this->_statement($sql, $parameters)->fetch(PDO::FETCH_COLUMN);
+        return SQLAbstractPDO::_fetchOrNull(
+            $this->_statement($sql, $parameters)->fetch(PDO::FETCH_COLUMN)
+        );
     }
     final function fetchAllColumn ($sql, $parameters=NULL) {
-        return $this->_statement($sql, $parameters)->fetchAll(PDO::FETCH_COLUMN);
+        return SQLAbstractPDO::_fetchOrEmptyArray(
+            $this->_statement($sql, $parameters)->fetchAll(PDO::FETCH_COLUMN)
+        );
     }
     final function prefix($name='') {
         return $this->_prefix.$name;
@@ -128,6 +148,10 @@ class SQLAbstractPDO extends SQLAbstract {
         return $openQuote.$name.$closeQuote;
     }
     final function placeholder($value) {
-        return '?';
+        if ($value === NULL) {
+            return 'NULL';
+        } else {
+            return '?';
+        }
     }
 }
