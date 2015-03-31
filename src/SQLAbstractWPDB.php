@@ -64,7 +64,9 @@ class SQLAbstractWPDB extends SQLAbstract {
         return '`'.$name.'`';
     }
     final function placeholder ($value) {
-        if (!is_scalar($value)) {
+        if(is_null($value)) {
+            return 'NULL';
+        } elseif (!is_scalar($value)) {
             throw $this->exception("SQL query parameter not a scalar: ".json_encode($value));
         } elseif (is_integer($value) || is_bool($value)) {
             return '%d';
