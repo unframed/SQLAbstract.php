@@ -484,9 +484,7 @@ abstract class SQLAbstract {
                 $setExpressions,
                 $this->identifier($name)." = ".$this->placeholder($value)
                 );
-            if($value !== null) {
-                array_push($setParams, $value);
-            }
+            array_push($setParams, $value);
         }
         list($whereExpression, $whereParams) = $this->whereParams(new JSONMessage($options));
         return array((
