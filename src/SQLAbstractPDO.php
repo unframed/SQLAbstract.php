@@ -148,10 +148,6 @@ class SQLAbstractPDO extends SQLAbstract {
         return $openQuote.$name.$closeQuote;
     }
     final function placeholder($value) {
-        if ($value === NULL) {
-            return 'NULL';
-        } else {
-            return '?';
-        }
+        return '?';
     }
 }

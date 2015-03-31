@@ -480,11 +480,12 @@ abstract class SQLAbstract {
         $setExpressions = array();
         $setParams = array();
         foreach($map as $name => $value) {
+            $placeholder = $this->placeholder($value);
             array_push(
                 $setExpressions,
-                $this->identifier($name)." = ".$this->placeholder($value)
+                $this->identifier($name)." = ".$placeholder
                 );
-            if ($value !== NULL) {
+            if ($placeholder !== 'NULL') {
                 array_push($setParams, $value);
             }
         }
