@@ -524,6 +524,18 @@ abstract class SQLAbstract {
         return $this->execute($sql, $params);
     }
 
+    function temporary ($name, $view, $options, $safe=FALSE) {
+        if ($safe === TRUE) {
+            self::assertSafe($options);
+        }
+        $options['limit'] = 0;
+        unset($options['offset']);
+        list($select, $params) = $this->selectStatement($view, $options);
+        return $this->execute((
+            "CREATE TEMPORARY TABLE ".$this->prefixed($name)." ".$select
+        ), $params);
+    }
+
     /**
      * Return a SHOW TABLES LIKE equivalent SQL statement.
      *
