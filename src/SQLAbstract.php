@@ -296,7 +296,12 @@ abstract class SQLAbstract {
      */
     function filterLike ($filter, $like=NULL, $whereAnd=array(), $params=array()) {
         foreach ($filter as $column => $value) {
-            if (!JSONMessage::is_list($value)) {
+            if ($value === NULL) {
+                array_push(
+                    $whereAnd,
+                    $this->identifier($column)." IS NULL"
+                );
+            } elseif (!JSONMessage::is_list($value)) {
                 array_push(
                     $whereAnd,
                     $this->identifier($column)." = ".$this->placeholder($value)
