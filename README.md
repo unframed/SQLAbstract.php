@@ -10,15 +10,20 @@ Requirements
 - eventually safely, ie: with limits and without injections;
 - covering applications from CRUD to paginated search and filter;
 - with prefixed table and view names, guarded identifiers and custom placeholders;
+- leverage SQL views
 - support PHP 5.3, MySQL, SQLite, PDO and WPDB.
 
 Credits
 ---
-To [badshark](https://github.com/badshark), [JoN1oP](https://github.com/JoN1oP) and [mrcasual](https://github.com/mrcasual) for requirements, code reviews, tests and reports.
+- [laurentszyster](https://github.com/badshark)
+- [JoN1oP](https://github.com/JoN1oP)
+- [badshark](https://github.com/badshark)
+- [mrcasual](https://github.com/mrcasual)
 
 Synopsis
 ---
 
+* [Introduction](#introduction)
 * [Construct](#construct)
     - [SQLAbstractPDO](#sqlabstractpdo)
     - [SQLAbstractWPDB](#sqlabstractwpdb)
@@ -39,7 +44,9 @@ Synopsis
 * [Add Columns](#add-columns)
 * [Driver](#driver)
 
-SQLAbstract is meant to safely query a single existing SQL database, eventually with prefixed table names.
+### Introduction
+
+SQLAbstract is meant to safely query an existing SQL database, eventually with prefixed table names.
 
 So, let's assume a legacy table with a prefixed name :
 
@@ -68,36 +75,30 @@ The `SQLAbstractPDO` class is intended to be used outside of a (legacy) framewor
 
 Use those factories to provide the first argument required by the constructor of `SQLAbstractPDO`. As second argument a table and view prefix can be given, it is optional and defaults to the empty string.
 
-~~~php
-<?php
+For instance, to connect to an SQLite 'test.db' database:
 
+~~~php
 $pdo = SQLAbstractPDO::openSQLite('test.db');
 $sql = new SQLAbstractPDO($pdo, 'prefix_');
 echo "Connected via the PDO driver named '".$sql->driver()."'.";
-
-?>
 ~~~
 
-Remember that it is not the purpose of `SQLAbstract` implementations to abstract the particulars of the SQL databases used by an application. The purpose of `SQLAbstract` is to safely support one common subset of SQL with wathever database API available be it PHP's own `PDO` or WordPress' `WPDB`.
+That's fine all PDO applications, but what about frameworks that use other APIs to connect to the database ? Or the ones that provide their own SQL connector ?
 
 #### SQLAbstractWPDB
 
-For instance, we could also have used the `SQLAbstractWPDB` class instead of `SQLAbstractPDO` :
+Well, in WordPress we could also have used the `SQLAbstractWPDB` class instead of `SQLAbstractPDO` :
 
 ~~~php
-<?php
-
 $sql = new SQLAbstractWPDB();
 echo "Connected via the WPDB to '".$sql->driver()."'.";
-
-?>
 ~~~
 
-Since WordPress provides its own global `$wpdb` instance, with an open connection to a database and a prefix, there is no need to supply anything to the constructor of `SQLAbstractWPDB`.
+Note that since WordPress provides its own global `$wpdb` instance - with an open connection to a database and a prefix - there is no need to supply anything to the constructor of `SQLAbstractWPDB`.
 
 #### SQLAbstract
 
-Extending your own `SQLAbstract` class for another framework than WordPress is relatively simple and you should look at the two concrete classes provided to see what must be implemented and how.
+The `SQLAbstract` class was designed to support many SQL dialects and many PHP database APIs. Extending your own concrete class for another framework than WordPress is relatively simple. Have look at the sources of `SQLAbstractPDO` and `SQLAbstractWPDB` to see what must be implemented and how.
 
 ### Execute
 
@@ -106,51 +107,49 @@ Nothing in `SQLAbstract` prevents you to execute arbitrary SQL statements.
 For instance, to create a view on the example legacy `tasks` table defined above :
 
 ~~~php
-<?php
+$sql->execute("
 
-$sq->execute("
-
-CREATE OR REPLACE VIEW ".$sql->prefixedIdentifier('task_view')." AS 
+CREATE OR REPLACE VIEW ".$sql->prefixed('task_view')." AS 
     SELECT *,
         (task_scheduled_for < NOW ()) AS task_due
         (task_completed_at IS NULL) AS task_todo,
         (task_due AND task_todo) AS task_overdue,
         (task_deleted_at IS NOT NULL) AS task_deleted
-    FROM ".$sql->prefixedIdentifier('task')."
+    FROM ".$sql->prefixed('task')."
 
 ");
-
-?>
 ~~~
 
-It is not the purpose of `SQLAbstract` to get in its applications' ways.
+When anything complex than an SQL `WHERE` expression is required to query the database then one or more SQL views should be created.
+
+Create as much SQL views as required and you will avoid the time-sink of maintaining complicated SQL statements entangled in PHP code and dispersed in your application's sources.
+
+And that's the one very big good reason you don't need what ORMs suck at: adding side-effects to something that should not have been done in the first place just to avoid *all* SQL.
+
+If you still want objects and classes, SQL views *and* what people love in ORMs is available on top of `SQLAbstract`, in [JSONModel.php](https://github.com/unframed/JSONModel.php).
 
 ### Fetch
 
-So application can also execute arbitrary parametrized statements and fetch row(s) and column(s).
+It is not the purpose of `SQLAbstract` to get in its applications' ways. So application can also execute arbitrary parametrized statements and fetch row(s) and column(s).
 
 To fetch all overdue tasks rows and columns from the view created above :
 
 ~~~php
-<?php
-
-$overdueTasks = $sq->fetchAll(
-    "SELECT * FROM ".$sql->prefixedIdentifier('task_view')
+$overdueTasks = $sql->fetchAll(
+    "SELECT * FROM ".$sql->prefixed('task_view')
     ." WHERE task_overdue IS TRUE"
     );
-
-?>
 ~~~
 
-You may use `execute` to insert, replace and update or use one of the four `fetch*` methods to select and count rows, but conveniences are provided to do many queries. And those general purpose conveniences can guard the most common queries against SQL injection by the application's user.
+You may use `execute` to insert, replace and update or use one of the four `fetch*` methods to select and count rows. 
+
+But conveniences are provided to do many queries. And they can guard the most common queries against SQL injection by the application's user.
 
 ### Insert
 
 For instance, let's insert a `$task` array in the table `task` and update this task's identifier :
 
 ~~~php
-<?php
-
 $now = time();
 $task = array(
     'task_name' => 'new task',
@@ -159,8 +158,6 @@ $task = array(
     'task_modified_at' => $now
     );
 $task['task_id'] = intval($sql->insert('task', $task));
-
-?>
 ~~~
 
 The following SQL statement will be executed, with safely bound parameters.
@@ -181,15 +178,11 @@ Use input may be safely passed to `insert`, all keys and values are guarded agai
 To count all tasks and fetch the whole `task_id` column, do :
 
 ~~~php
-<?php
-
 $allTasksCount = $sql->count('task');
 $allTasksIds = $sql->column('task', array(
     'columns' => array('task_id'),
     'limit' => $allTasksCount
 ));
-
-?>
 ~~~
 
 Here are the two SQL `SELECT` statements executed.
@@ -207,22 +200,16 @@ Because safety does not stop at SQL injection, applications *must* avoid to fetc
 
 Before we move on to `select` the inserted row, let's pause and consider the set of options used by SQAbstract methods to build an SQL statement safely.
 
-Here are the safe defaults for the combined safe options used by `count`, `column`, `select`, `update` and `delete` :
+Here are the options used by `count`, `column`, `select`, `update` and `delete`:
 
-~~~php
-<?php
-
-$options = array(
-    'columns': array(),
-    'filter': array(),
-    'like': array(),
-    'order': array(),
-    'limit': 30,
-    'offset': 0
-)
-
-?>
-~~~
+- `where` : an SQL expression
+- `params` : a list of parameter values
+- `columns` : a list of column names to select
+- `filter` : a map of column names and values to filter on
+- `like` : a map of column names and strings to match
+- `order_by` : a list of clauses
+- `limit` : the number of relations selected
+- `offset` : of the selection
 
 The options `offset`, `limit`, `order` and `columns` are simply ignored by the methods `delete`, `update` and `count`.
 
@@ -231,8 +218,6 @@ The options `offset`, `limit`, `order` and `columns` are simply ignored by the m
 Select the first task named 'new task', edit and replace :
 
 ~~~php
-<?php
-
 $tasks = $sql->select('task', array(
     'filter' => array(
         'task_name' => 'new task'
@@ -243,8 +228,6 @@ foreach($tasks as $task) {
     $task['task_modified_at'] = time();
     $sql->replace('task', $task);
 }
-
-?>
 ~~~
 
 The following SQL statements will be executed, with safely bound parameters.
@@ -267,8 +250,6 @@ Not very elegant in this particular case, but demonstrative of a common pattern 
 Updating rows selected by options with the same data is actually much simpler.
 
 ~~~php
-<?php
-
 $sql->update('task', array(
     'task_modified_at' => time()
 ), array(
@@ -276,8 +257,6 @@ $sql->update('task', array(
         'task_name' => 'new name'
     )
 ));
-
-?>
 ~~~
 
 Also, it executes a single SQL statement.
@@ -293,15 +272,11 @@ Beware, updates have no limits.
 Deleting rows at once follows the same pattern, using the same options as `update` and `count`.
 
 ~~~php
-<?php
-
 $sql->delete('task', array(
     'filter' => array(
         'task_name' => 'new name'
     )
 ));
-
-?>
 ~~~
 
 Again beware `delete` yields no `LIMIT` clause.
@@ -319,8 +294,6 @@ The safe options to generate a WHERE clause are `filter` and `like`.
 For instance, here is a bit more complex select statement. 
 
 ~~~php
-<?php
-
 $sql->select("task", array(
     "filter" => array(
         "task_id" => array(1,2,3),
@@ -331,8 +304,6 @@ $sql->select("task", array(
         "task_description" => "new%"
     )
 ));
-
-?>
 ~~~
 
 This implements the typical filter and search feature found in most database application and executes the following SQL :
@@ -356,13 +327,9 @@ There is a flag argument to assert safe options when calling the `count`, `colum
 For instance :
 
 ~~~php
-<?php
-
 function userSelectTasks($sql, $options) {
     return $sql->select("task_view", $options, TRUE);
 }
-
-?>
 ~~~
 
 Note that if an unsafe option is set, the call to `select` will throw an exception instead of letting the user input execute injected SQL. And since a `limit` default is always set, no unlimited amount of data will be queried.
@@ -371,11 +338,9 @@ This is what "safe" means here.
 
 ### Unsafe Options
 
-The `where` and `params` options allow to specify an SQL expression and a list of execution parameters. And they are not safe. Applications are expected to use the `identifier` and `placeholder` methods to build the expression.
+The `where` and `params` options allow to specify an SQL expression and a list of parameters values. Applications are expected to use the `identifier` and `placeholder` methods to build the expression safely.
 
 ~~~php
-<?php
-
 $now = time();
 $sql->select("task", array(
     "where" => (
@@ -384,12 +349,12 @@ $sql->select("task", array(
         .$sql->placeholder($now)
     ),
     "params" => array($now)
-));
-
-?>
+), FALSE);
 ~~~
 
-Remember that the SQL generated contains the literal `where` option.
+Note that a `FALSE` flag has been added to the method call. It explicitely tells the `select` method not to assert safe options. Also, it will remind any code reviewer that the `where` option should be carefully inspected.
+
+And remember that the SQL generated contains the literal `where` option.
 
 ~~~sql
 SELECT * FROM `prefix_task` WHERE `task_scheduled_for` > ?
@@ -397,7 +362,7 @@ SELECT * FROM `prefix_task` WHERE `task_scheduled_for` > ?
 
 So, no user input should be passed as `where` option.
 
-Use with care.
+Ever.
 
 ### Replace Or Create View
 
@@ -406,18 +371,14 @@ Whenever an unsafe option is required, more column(s) in more view(s) declared i
 For instance, to filter tasks by various states, use `createViewStatement` :
 
 ~~~php
-<?php
-
 echo $sql->createViewStatement('task_view', ("
     SELECT *,
         (task_scheduled_for < NOW ()) AS task_due
         (task_completed_at IS NULL) AS task_todo,
         (task_due AND task_todo) AS task_overdue,
         (task_deleted_at IS NOT NULL) AS task_deleted
-    FROM ".$sql->prefixedIdentifier('task')."
+    FROM ".$sql->prefixed('task')."
 "));
-
-?>
 ~~~
 
 The echo is equivalent to :
@@ -439,8 +400,6 @@ Just idiomatic SQL, the safe way to replace a view.
 A statement is also provided for table creation :
 
 ~~~php
-<?php
-
 echo $sql->createStatement('task', array(
     'task_id' => "INTEGER AUTOINCREMENT",
     'task_name' => "VARCHAR(255) NOT NULL",
@@ -450,9 +409,9 @@ echo $sql->createStatement('task', array(
     'task_modified_at' => "INTEGER UNSIGNED NOT NULL",
     'task_deleted_at' => "INTEGER UNSIGNED",
     'task_description' => "MEDIUMTEXT"
-), array('task_id');
-
-?>
+), array(
+    'task_id'
+));
 ~~~
 
 Again, idiomatic SQL :
@@ -482,14 +441,10 @@ The methods `showTables($like)` and `showColumns($table)` execute the two schema
 To collect a simple `$schema` of tables, views and columns, do :
 
 ~~~php
-<?php
-
 $schema = array();
 foreach($sql->showTables() as $prefixedName) {
     $schema[$prefixedName] = $sql->showColumns($prefixedName);
 }
-
-?>
 ~~~
 
 For MySQL the following SQL statements will be executed :
@@ -506,13 +461,9 @@ For other databases the equivalent statements will be executed, returning a colu
 The alter statement provided add columns to a table.
 
 ~~~php
-<?php
-
 echo $sql->alterTableStatement('tasks', array(
     'task_json' => 'MEDIUMTEXT'
 ));
-
-?>
 ~~~
 
 Nothing more.
@@ -528,25 +479,11 @@ And that's it for the last SQL verb abstracted.
 Under this SQL abstraction is a database.
 
 ~~~php
-<?php
-
 $pdo = new SQLAbstractPDO::openSQLite('test.db');
 $sql = new SQLAbstractPDO($pdo, 'prefix_');
 echo "Connected via the PDO to '".$sql->driver()."'.";
-
-?>
 ~~~
 
 The `driver` method can eventually be used by applications of `SQLAbstract` to support the different SQL dialects implemented by different databases.
 
 For instance, string concatenation in SQL is provided by the `||` operator for most SQL database but it is available as the `CONCAT()` function in MySQL.
-
-### SQL
-
-When anything more complex than an SQL `WHERE` expression is required in an application to query the database then one or more SQL views must be created.
-
-Create as much SQL views as required and you will avoid the time-sink of maintaining complicated SQL statements entangled in PHP code and dispersed in your application's sources.
-
-And that's the one very big good reason you don't need what ORMs suck at: adding side-effects to something that should not have been done in the first place just to avoid *all* SQL.
-
-If you still want objects and classes, SQL views *and* what people love in ORMs is available on top of `SQLAbstract`, in [JSONModel.php](https://github.com/unframed/JSONModel.php).
