@@ -381,7 +381,7 @@ abstract class SQLAbstract {
         $m = new JSONMessage($options);
         $columns = $m->getList('columns', array());
         list($where, $params) = $this->whereParams($m);
-        $orders = $m->getList('orders', array());
+        $orders = $m->getList('order_by', $m->getList('orders', array()));
         $sql = (
             "SELECT ".$this->columns($columns)
             ." FROM ".$this->prefixed($view)
