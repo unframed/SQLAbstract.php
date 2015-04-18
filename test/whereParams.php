@@ -6,7 +6,7 @@ $sqlAbstract = new SQLAbstractTest('wp_');
 
 $t = new TestMore();
 
-$t->plan(12);
+$t->plan(14);
 
 function _whereParams ($sqlAbstract, $map) {
 	return $sqlAbstract->whereParams(new JSONMessage($map));
@@ -73,7 +73,7 @@ $t->is($params, array(3, 1, 'like%'), json_encode($params));
 list($sql, $params) = _whereParams($sqlAbstract, array(
 	'filter' => array(
 		'one' => 3,
-		'two' => 1
+		'two' => NULL
 		),
 	'like' => array(
 		'column' => 'like%',
@@ -81,6 +81,22 @@ list($sql, $params) = _whereParams($sqlAbstract, array(
 		)
 	));
 $t->is($sql, (
-	"`one` = ? AND `two` = ? AND (`column` LIKE ? OR `three` LIKE ?)"
+	"`one` = ? AND `two` IS NULL AND (`column` LIKE ? OR `three` LIKE ?)"
 	), $sql);
-$t->is($params, array(3, 1, 'like%', 'search%'), json_encode($params));
+$t->is($params, array(3, 'like%', 'search%'), json_encode($params));
+
+list($sql, $params) = _whereParams($sqlAbstract, array(
+	'filter' => array(
+		'one' => 3
+		),
+	'where' => "`two` > ?",
+	'params' => array(1),
+	'like' => array(
+		'column' => 'like%',
+		'three' => 'search%'
+		)
+	));
+$t->is($sql, (
+	"`two` > ? AND `one` = ? AND (`column` LIKE ? OR `three` LIKE ?)"
+	), $sql);
+$t->is($params, array(1, 3, 'like%', 'search%'), json_encode($params));
