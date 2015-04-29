@@ -1,25 +1,6 @@
-SQLAbstract.php
----
-[![Build Status](https://travis-ci.org/unframed/SQLAbstract.php.svg)](https://travis-ci.org/unframed/SQLAbstract.php)
-
-Safe SQL abstractions for PHP and WordPress.
-
-Requirements
----
-- provide conveniences to query SQL tables and views;
-- eventually safely, ie: with limits and without injections;
-- covering applications from CRUD to paginated search and filter;
-- with prefixed table and view names, guarded identifiers and custom placeholders;
-- support PHP 5.3, MySQL, SQLite, PDO and WPDB.
-
-Credits
----
-- [laurentszyster](https://github.com/badshark)
-- [JoN1oP](https://github.com/JoN1oP)
-- [badshark](https://github.com/badshark)
-- [mrcasual](https://github.com/mrcasual)
-
-Synopsis
+SQLAbstract
+===
+Tutorial
 ---
 
 * [Introduction](#introduction)
@@ -48,7 +29,9 @@ Synopsis
 
 ### Introduction
 
-SQLAbstract is meant to safely query an existing SQL database, eventually with prefixed table names. And do that in and out of a framework, including WordPress.
+`SQLAbstract` was made to support the requirements for MailPoet: consistently execute injection-free SQL, in and out of WordPress.
+
+`SQLAbstract` is meant to safely query an existing SQL database, eventually with prefixed table names. And do all that in and out of a framework, including WordPress.
 
 So, let's assume a legacy table with a prefixed name :
 
@@ -81,7 +64,7 @@ For instance, to connect to an SQLite 'test.db' database:
 $pdo = SQLAbstractPDO::openSQLite('test.db');
 ~~~
 
-Then construct a new `SQLAbstract` with that PDO connection: 
+Then construct a new `SQLAbstract` with that PDO connection:
 
 ~~~php
 $sql = new SQLAbstractPDO($pdo, 'prefix_');
@@ -103,10 +86,6 @@ echo "Connected via the WPDB to '".$sql->driver()."'.";
 
 Note that since WordPress provides its own global `$wpdb` instance - with an open connection to a database and a prefix - there is no need to supply anything to the constructor of `SQLAbstractWPDB`.
 
-Why WordPress?
-
-Because `SQLAbstract` was made to support the requirements for MailPoet.
-
 #### SQLAbstract
 
 The `SQLAbstract` class was designed to support different SQL dialects and different PHP database APIs.
@@ -126,7 +105,7 @@ For instance, to create a view on the example legacy `tasks` table defined above
 ~~~php
 $sql->execute("
 
-CREATE OR REPLACE VIEW ".$sql->prefixed('task_view')." AS 
+CREATE OR REPLACE VIEW ".$sql->prefixed('task_view')." AS
     SELECT *,
         (task_scheduled_for < NOW ()) AS task_due
         (task_completed_at IS NULL) AS task_todo,
@@ -163,7 +142,7 @@ $overdueTasks = $sql->fetchAll(
     );
 ~~~
 
-You may use `execute` to insert, replace and update or use one of the four `fetch*` methods to select and count rows. 
+You may use `execute` to insert, replace and update or use one of the four `fetch*` methods to select and count rows.
 
 But conveniences are provided to do many queries. And they can guard the most common queries against SQL injection by the application's user.
 
@@ -186,10 +165,10 @@ The following SQL statement will be executed, with safely bound parameters.
 
 ~~~sql
 INSERT INTO `prefix_task` (
-    `task_name`, 
-    `task_created_at`, 
-    `task_scheduled_for`, 
-    `task_modified_at`, 
+    `task_name`,
+    `task_created_at`,
+    `task_scheduled_for`,
+    `task_modified_at`,
     ) VALUES (?, ?, ?, ?)
 ~~~
 
@@ -257,10 +236,10 @@ The following SQL statements will be executed, with safely bound parameters.
 ~~~sql
 SELECT * FROM `prefix_task` WHERE `task_name` = ? LIMIT 1;
 REPLACE INTO `prefix_task` (
-    `task_name`, 
-    `task_created_at`, 
-    `task_scheduled_for`, 
-    `task_modified_at`, 
+    `task_name`,
+    `task_created_at`,
+    `task_scheduled_for`,
+    `task_modified_at`,
     ) VALUES (?, ?, ?, ?)
 ;
 ~~~
@@ -284,7 +263,7 @@ $sql->update('task', array(
 Also, it executes a single SQL statement.
 
 ~~~sql
-UPDATE `prefix_task` SET `task_modified_at` = ? WHERE `task_name` = ? 
+UPDATE `prefix_task` SET `task_modified_at` = ? WHERE `task_name` = ?
 ~~~
 
 Beware, updates have no limits.
@@ -304,7 +283,7 @@ $sql->delete('task', array(
 Again beware `delete` yields no `LIMIT` clause.
 
 ~~~sql
-DELETE FROM `prefix_task` WHERE `task_name` = ? 
+DELETE FROM `prefix_task` WHERE `task_name` = ?
 ~~~
 
 To use with care in any cases.
@@ -313,7 +292,7 @@ To use with care in any cases.
 
 The safe options to generate a WHERE clause are `filter` and `like`.
 
-For instance, here is a bit more complex select statement. 
+For instance, here is a bit more complex select statement.
 
 ~~~php
 $sql->select("task", array(
@@ -331,13 +310,13 @@ $sql->select("task", array(
 This implements the typical filter and search feature found in most database application and executes the following SQL :
 
 ~~~sql
-SELECT * FROM `prefix_task` WHERE 
-    `task_in` in (?, ?, ?) 
+SELECT * FROM `prefix_task` WHERE
+    `task_in` in (?, ?, ?)
     AND task_delete_at = ?
     AND (
-        `task_name` like ? 
+        `task_name` like ?
         OR `task_description` like ?
-        ) 
+        )
     LIMIT 30 OFFSET 0
 ;
 ~~~
@@ -443,7 +422,7 @@ echo $sql->createViewStatement('task_view', ("
 The echo is equivalent to :
 
 ~~~sql
-CREATE OR REPLACE VIEW `prefix_task_view` AS 
+CREATE OR REPLACE VIEW `prefix_task_view` AS
     SELECT *,
         (task_scheduled_for < NOW ()) AS task_due
         (task_completed_at IS NULL) AS task_todo,
@@ -552,7 +531,7 @@ function insertTaskLimited ($sql, $task) {
 }
 $sql->transaction('insertTaskLimited', array($sql, $task));
 ~~~
- 
+
 Note that some databases turn autocommit on for schema update query (any CREATE, ALTER, DROP and such statements). And so, SQL transactions are in effect practical only for sequences of INSERT, UPDATE and DELETE statements.
 
 ### Driver
