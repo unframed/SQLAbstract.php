@@ -203,6 +203,7 @@ Before we move on to `select` the inserted row, let's pause and consider the set
 
 Here are the options used by `count`, `column`, `select`, `update` and `delete`:
 
+- `in` : column names and rows
 - `where` : an SQL expression
 - `params` : a list of parameter values
 - `columns` : a list of column names to select

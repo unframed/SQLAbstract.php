@@ -14,6 +14,7 @@ test: pull
 	php test/selectByKeys.php
 	php test/order.php
 	php test/orderBy.php
+	php test/inSet.php
 	php test/filterLike.php
 	php test/whereParams.php
 	php test/countStatement.php

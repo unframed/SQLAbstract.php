@@ -284,6 +284,32 @@ abstract class SQLAbstract {
         }
         return " ORDER BY ".implode(", ", array_map(array($this, 'order'), $orders));
     }
+
+    function inSet ($columns, $rows, $whereAnd=array(), $params=array()) {
+        if (count($columns) === 0 || count($rows) === 0) {
+            return array($whereAnd, $params);
+        }
+        $offset = count($params);
+        $keys = array_combine(
+            $columns, array_fill(0, count($columns), NULL)
+        );
+        // map to positional parameters
+        foreach ($rows as $row) {
+            $params = array_merge($params, array_values(array_intersect_key($row, $keys)));
+        }
+        // get the placeholders from the first row
+        $placeholders = implode(', ', array_map(
+            array($this, 'placeholder'),
+            array_slice($params, $offset, count($columns))
+        ));
+        $whereAnd[] = (
+            "(".implode(', ', $columns).") IN (("
+                .implode('), (', array_fill(0, count($rows), $placeholders))
+            ."))"
+        );
+        // return the statement and the updated parameters
+        return array($whereAnd, $params);
+    }
     /**
      * Return an SQL expression with positional placeholders and a list of parameters
      * for the given $filter and $like array.
@@ -337,18 +363,22 @@ abstract class SQLAbstract {
      */
     function whereParams ($message) {
         if ($message->has('where')) {
-            return $this->filterLike(
-                $message->getMap('filter', array()),
-                $message->getMap('like', array()),
-                array($message->getString('where')),
-                $message->getList('params', array())
-            );
+            $whereAnd = array($message->getString('where'));
+            $params = $message->getList('params', array());
         } else {
-            return $this->filterLike(
-                $message->getMap('filter', array()),
-                $message->getMap('like', array())
-            );
+            $whereAnd = array();
+            $params = array();
         }
+        if ($message->has('in')) {
+            list($columns, $rows) = $message->getList('in');
+            list($whereAnd, $params) = $this->inSet();
+        }
+        return $this->filterLike(
+            $message->getMap('filter', array()),
+            $message->getMap('like', array()),
+            $whereAnd,
+            $params
+        );
     }
 
     static function assertSafe ($options) {
