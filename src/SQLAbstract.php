@@ -371,7 +371,7 @@ abstract class SQLAbstract {
         }
         if ($message->has('in')) {
             list($columns, $rows) = $message->getList('in');
-            list($whereAnd, $params) = $this->inSet();
+            list($whereAnd, $params) = $this->inSet($columns, $rows, $whereAnd, $params);
         }
         return $this->filterLike(
             $message->getMap('filter', array()),
