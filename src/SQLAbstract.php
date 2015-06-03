@@ -144,13 +144,19 @@ abstract class SQLAbstract {
         } elseif (count($primary) > 1) {
             array_push($lines, "PRIMARY KEY (".implode(
                 ", ", array_map(array($this, 'identifier'), $primary)
-                ).")");
+            ).")");
         }
-        return (
+        $statement = (
             "CREATE TABLE IF NOT EXISTS "
             .$this->prefixed($name)
             ." (\n ".implode(",\n ", $lines)."\n)\n"
-            );
+        );
+        switch ($this->driver()) {
+            case 'mysql':
+                return $statement.' DEFAULT CHARSET=utf8';
+            default:
+                return $statement;
+        }
     }
     function alterTableStatement ($name, $columns) {
         $lines = array();
