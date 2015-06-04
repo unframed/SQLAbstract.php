@@ -37,6 +37,12 @@ class SQLAbstractPDO extends SQLAbstract {
     final function pdo () {
         return $this->_pdo;
     }
+    final function close () {
+        $this->_pdo = NULL;
+    }
+    final function closed () {
+        return ($this->_pdo === NULL);
+    }
     final function driver () {
         return $this->pdo()->getAttribute(PDO::ATTR_DRIVER_NAME);
     }
