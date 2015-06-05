@@ -22,7 +22,7 @@ $t->is($sql, (
 	." `table_key` INTEGER NOT NULL,\n"
 	." `table_col` VARCHAR(255) DEFAULT '',\n"
 	." PRIMARY KEY (`table_id`)\n"
-	.")\n"
+	.")\n DEFAULT CHARSET=utf8"
 ), $sql);
 
 $sql = $sqlAbstract->createTableStatement('relation', array(
@@ -37,5 +37,5 @@ $t->is($sql, (
 	." `relation_a` INTEGER NOT NULL,\n"
 	." `relation_b` VARCHAR(255) NOT NULL DEFAULT '',\n"
 	." PRIMARY KEY (`relation_a`, `relation_b`)\n"
-	.")\n"
+	.")\n DEFAULT CHARSET=utf8"
 ), $sql);
