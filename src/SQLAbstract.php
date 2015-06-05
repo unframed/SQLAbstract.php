@@ -512,9 +512,42 @@ abstract class SQLAbstract {
         return $this->lastInsertId();
     }
 
+    function insertAllStatement ($table, $rows, $columns, $verb) {
+        $keys = array_keys($columns);
+        $placeholders = array_map(array($this, 'placeholder'), array_values($columns));
+        $params = array();
+        foreach ($rows as $row) {
+            $values = array_values(array_intersect_key(
+                array_merge($columns, $row), $columns
+            ));
+            $params = array_merge($params, $values);
+        }
+        return array((
+            $verb." INTO ".$this->prefixed($table)
+            ." (".implode(", ", array_map(array($this, 'identifier'), $keys)).")"
+            ." VALUE (".implode(
+                "), (", array_fill(0, count($rows), implode(', ', $placeholders))
+            ).")"
+        ), $params);
+    }
+
+    function insertAll ($table, $rows, $columns=NULL, $verb='INSERT') {
+        if (count($rows) === 0) {
+            return 0;
+        }
+        list($sql, $params) = $this->insertAllStatement(
+            $table, $rows, ($columns === NULL? $rows[0]: $columns), $verb
+        );
+        return $this->execute($sql, $params);
+    }
+
     function replace ($table, $map) {
         list($sql, $params) = $this->insertStatement($table, $map, 'REPLACE');
         return $this->execute($sql, $params);
+    }
+
+    function replaceAll ($table, $rows, $columns=NULL) {
+        return $this->insertAll($table, $rows, $columns, 'REPLACE');
     }
 
     function updateStatement($table, $map, $options) {
