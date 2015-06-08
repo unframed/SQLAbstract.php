@@ -506,8 +506,8 @@ abstract class SQLAbstract {
             );
     }
 
-    function insert ($table, $map) {
-        list($sql, $params) = $this->insertStatement($table, $map, 'INSERT');
+    function insert ($table, $map, $verb="INSERT") {
+        list($sql, $params) = $this->insertStatement($table, $map, $verb);
         $this->execute($sql, $params);
         return $this->lastInsertId();
     }
