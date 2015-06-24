@@ -41,4 +41,7 @@ class SQLAbstractTest extends SQLAbstract {
     function placeholder($value) {
         return '?';
     }
+    function databaseName () {
+        return 'test';
+    }
 }

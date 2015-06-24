@@ -4,6 +4,9 @@ class SQLAbstractWPDB extends SQLAbstract {
     final function driver () {
         return 'mysql';
     }
+    final function databaseName () {
+        return DB_NAME;
+    }
     final function transaction ($callable, $arguments=NULL) {
         global $wpdb;
         $transaction = FALSE;

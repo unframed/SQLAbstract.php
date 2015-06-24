@@ -13,7 +13,7 @@ $sql = $sqlAbstract->createTableStatement('table', array(
 	'table_key' => "INTEGER NOT NULL",
 	'table_col' => "VARCHAR(255) DEFAULT ''"
 ), array(
-	'table_id'
+	"PRIMARY KEY (`table_id`)"
 ));
 
 $t->is($sql, (
@@ -29,7 +29,7 @@ $sql = $sqlAbstract->createTableStatement('relation', array(
 	'relation_a' => "INTEGER NOT NULL",
 	'relation_b' => "VARCHAR(255) NOT NULL DEFAULT ''"
 ), array(
-	'relation_a', 'relation_b'
+	"PRIMARY KEY (`relation_a`, `relation_b`)"
 ));
 
 $t->is($sql, (

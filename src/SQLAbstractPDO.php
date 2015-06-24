@@ -24,6 +24,7 @@ class SQLAbstractPDO extends SQLAbstract {
             $dsn, $user, $password,
             array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8")
             );
+        $pdo->sqlAbstractDatabaseName = $name;
         return $pdo;
     }
     private $_pdo;
@@ -36,6 +37,9 @@ class SQLAbstractPDO extends SQLAbstract {
     }
     final function pdo () {
         return $this->_pdo;
+    }
+    final function databaseName () {
+        return $this->pdo()->sqlAbstractDatabaseName;
     }
     final function close () {
         $this->_pdo = NULL;
